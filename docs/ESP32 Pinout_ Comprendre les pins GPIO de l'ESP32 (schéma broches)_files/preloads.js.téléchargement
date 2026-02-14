@@ -1,0 +1,78 @@
+
+    (function() {
+      var baseURL = "https://cdn.shopify.com/shopifycloud/checkout-web/assets/";
+      var scripts = ["https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/polyfills.CPIGHvSH.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/app.lyH_HRwl.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/page-OnePage.DR0vP45O.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/DeliveryMethodSelectorSection.Ca20PPwf.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/useEditorShopPayNavigation.Bn_sHleW.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/VaultedPayment.CZ5Cm4jL.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/LocalizationExtensionField.DB1wgIsn.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/ShopPayOptInDisclaimer.LhA_Gc1j.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/ShipmentBreakdown.Cocrj4UW.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/MerchandiseModal.DEDeB--6.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/StackedMerchandisePreview.DsdH_h_G.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/PayButtonSection.BMXWJHWw.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/component-ShopPayVerificationSwitch.XXXtNtAt.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/useSubscribeMessenger.CGChIBKE.js","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/index.BPw3P_pi.js"];
+      var styles = ["https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/app.CXL-GAUL.css","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/OnePage.PMX4OSBO.css","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/DeliveryMethodSelectorSection.DmqjTkNB.css","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/useEditorShopPayNavigation.DCOTvxC3.css","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/VaultedPayment.OxMVm7u-.css","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/StackedMerchandisePreview.CKAakmU8.css","https://cdn.shopify.com/shopifycloud/checkout-web/assets/c1.fr/assets/ShopPayVerificationSwitch.DW7NMDXG.css"];
+      var fontPreconnectUrls = ["https://fonts.shopifycdn.com"];
+      var fontPrefetchUrls = ["https://fonts.shopifycdn.com/roboto/roboto_n4.da808834c2315f31dd3910e2ae6b1a895d7f73f5.woff2?h1=dXBlc3kuZnI&hmac=d4823c031c65f57b4bc6205e08e06c09d2ad12b8b938b2bac4188369c29955c8","https://fonts.shopifycdn.com/roboto/roboto_n5.126dd24093e910b23578142c0183010eb1f2b9be.woff2?h1=dXBlc3kuZnI&hmac=bd0559587dc180045a3fa7f2a483105b26d90810e9ce84062165e3d7467bb804"];
+      var imgPrefetchUrls = ["https://cdn.shopify.com/s/files/1/0609/6011/2892/files/uPesy_logo_black_medium_res_x320.png?v=1637057180"];
+
+      function preconnect(url, callback) {
+        var link = document.createElement('link');
+        link.rel = 'dns-prefetch preconnect';
+        link.href = url;
+        link.crossOrigin = '';
+        link.onload = link.onerror = callback;
+        document.head.appendChild(link);
+      }
+
+      function preconnectAssets() {
+        var resources = [baseURL].concat(fontPreconnectUrls);
+        var index = 0;
+        (function next() {
+          var res = resources[index++];
+          if (res) preconnect(res, next);
+        })();
+      }
+
+      function prefetch(url, as, callback) {
+        var link = document.createElement('link');
+        if (link.relList.supports('prefetch')) {
+          link.rel = 'prefetch';
+          link.fetchPriority = 'low';
+          link.as = as;
+          if (as === 'font') link.type = 'font/woff2';
+          link.href = url;
+          link.crossOrigin = '';
+          link.onload = link.onerror = callback;
+          document.head.appendChild(link);
+        } else {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.onloadend = callback;
+          xhr.send();
+        }
+      }
+
+      function prefetchAssets() {
+        var resources = [].concat(
+          scripts.map(function(url) { return [url, 'script']; }),
+          styles.map(function(url) { return [url, 'style']; }),
+          fontPrefetchUrls.map(function(url) { return [url, 'font']; }),
+          imgPrefetchUrls.map(function(url) { return [url, 'image']; })
+        );
+        var index = 0;
+        function run() {
+          var res = resources[index++];
+          if (res) prefetch(res[0], res[1], next);
+        }
+        var next = (self.requestIdleCallback || setTimeout).bind(self, run);
+        next();
+      }
+
+      function onLoaded() {
+        try {
+          if (parseFloat(navigator.connection.effectiveType) > 2 && !navigator.connection.saveData) {
+            preconnectAssets();
+            prefetchAssets();
+          }
+        } catch (e) {}
+      }
+
+      if (document.readyState === 'complete') {
+        onLoaded();
+      } else {
+        addEventListener('load', onLoaded);
+      }
+    })();
+  

@@ -1,0 +1,93 @@
+vérifier tous les while => devrait etre ok si pas de WDG actif
+
+ECRAN.DIGIT à revoir => FAIT
+supprimé analog.c => FAIT
+changer cf_check_and_display
+
+Enregistré en mémoir non volatile la conf
+https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/
+https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
+
+https://www.industrialshields.com/blog/arduino-industrial-1/how-to-use-esp32-nvs-memory-to-store-data-permanently-550
+
+#include <Preferences.h>
+Preferences prefs;
+
+int dataStore[3] = {12345, 45689, 78901};
+int dataRetrieve[3];
+
+void setup() {
+  Serial.begin(115200);
+  prefs.begin("IntegerArray"); //namespace
+  //bytes can be put/get in namespace directly see prefs2struct example
+  //prefs.putBytes("IntegerArray", (byte*)(&dataStore), sizeof(dataStore));
+  //SavedIntegers is Key
+  prefs.putBytes("SavedIntegers", (byte*)(&dataStore), sizeof(dataStore));
+  prefs.getBytes("SavedIntegers", &dataRetrieve, sizeof(dataRetrieve));
+  Serial.println(dataRetrieve[0]);
+  Serial.println(dataRetrieve[1]);
+  Serial.println(dataRetrieve[2]);
+
+Ecran
+ecran_print_one_char => remplacé 
+Ecran.tRate = 255; => supprimé
+	ecran_blank();
+
+
+Récup conf 
+cf_rcv
+
+Remplacer Cptms par millis
+TempsSup => FAIT
+TempsInf => FAIT	
+Decompte => compte 50ms inutile
+
+FEU_RESTART_AFTER_PAUSE pourquoi est-ce que ça remet le compteur à 0 bug ? non
+
+
+Cpt1Sur20s compte le temps en 1/20éme de seconde à partir du début du top départ
+
+20 - 10 = 10
+
+
+
+
+TODO Micro.State à envoyer par liaison série au lieu de High_priority
+
+
+TODO
+1/ pouvoir charger sans appuer sur le bouton, boot => semble ok avec une capa 10µF en EN (+) et GND (-)
+https://randomnerdtutorials.com/solved-failed-to-connect-to-esp32-timed-out-waiting-for-packet-header/
+2/ pouvoir charger sans recompiler
+  2.1/ Se placer dans le répertoire C:\Users\Cédric\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\4.6> 
+  2.2/ ouvrir un terminal
+  2.3/ taper :
+  .\esptool.exe --chip esp32 --port "COM3" --baud 115200  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x1000 "C:\Users\Cédric\AppData\Local\Temp\arduino-sketch-34D6A640BBD93FC06A3AFB5DC91006AC/PyronuMGPF.ino.bootloader.bin" 0x8000 "C:\Users\Cédric\AppData\Local\Temp\arduino-sketch-34D6A640BBD93FC06A3AFB5DC91006AC/PyronuMGPF.ino.partitions.bin" 0xe000 "C:\Users\Cédric\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.0.0/tools/partitions/boot_app0.bin" 0x10000 "C:\Users\Cédric\AppData\Local\Temp\arduino-sketch-34D6A640BBD93FC06A3AFB5DC91006AC/PyronuMGPF.ino.bin"
+  Cette commande est reprise d'arduino IDE
+3/ comprendre pourquoi le bouton ON est vu tout le temps appuyé
+  3.1/ Pull Up Externe 3.3V à mettre
+3/ Faire le chargement de la config
+
+5/ Dans le cas de changement de position le bouton comu puissance peut être vu SERIAL_DEBUG("Erreur - comu puissance oui et non vus HIGH");
+les deux entrées étant pull up quand le switch est dans l'état intermediaire il se peut que le soft voit les deux entrées HIGH
+=> décision d'enlever le cas d'erreur (COMU_PUISS_NON == HIGH) && (COMU_PUISS_OUI == HIGH))
+
+6/ seuls les deux premiers Pixel RGB sont piloté
+  une piste ?
+  si je change la couleur dans la fonction d'init les deux dernière led prenne la couleur précédente et les deux premi_re led prennent la nouvelle
+  les couleurs semblent être latché trop tot
+=> led 3 dead
+
+7/ On teste ligne après de manière auto puis
+déroule par rapport au programme on teste les sorties les unes apres les autres
+
+=> a chaque résultat OK la led s'allume
+=> a chaque résultat Moyen la led clignote
+=> a chaque résultat KO l'écran affiche le numéro de la sortie et le  puis est relancé si l'utilisateur 
+
+=> les résultats sont stockés dans un tableau puis à la fin 
+=> affiché sur lécran dans le mesure du possible 
+X O M 
+X O M
+
+7/ inclure ShiftRegister74HC595 dans le projet direct
