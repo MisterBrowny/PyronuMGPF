@@ -3,7 +3,7 @@
 
 
 #define PAUSE_VALUE         99  // MOD_V0010: valeur de sortie pour activer la pause
-#define NB_PAUSE_MAX        5   // MOD_V0010: nb de pause max dans la séquence
+#define NB_PAUSE_MAX        5   // MOD_V0010: nb de pause max dans la séquence // TODO vérifier si 5 pause c'est toujours ok
 #define	NB_RELAY			16
 #define	CF_SECTOR_SIZE		3
 #define	CF_CONTROL_SIZE		5
@@ -16,7 +16,7 @@
 #define OFFSET_CHECKSUM_4   (OFFSET_LAST_OUTPUT + 4)
 
 typedef struct StructConfig {
-	uint8_t					Data[CF_SIZE]; // 32 * 3  + 5 * 3 + 5 // MOD_V0010
+	uint8_t					Data[CF_SIZE]; // 16 * 3  + 5 * 3 + 5 // MOD_V0010
 	volatile uint8_t		Index;
 	volatile unsigned long	Time1;
 	unsigned long 			Time2;

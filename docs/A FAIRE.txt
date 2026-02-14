@@ -90,4 +90,6 @@ déroule par rapport au programme on teste les sorties les unes apres les autres
 X O M 
 X O M
 
-7/ inclure ShiftRegister74HC595 dans le projet direct
+8/ inclure ShiftRegister74HC595 dans le projet direct => FAIT
+
+9/ // TODO vérifier si 5 pause c'est toujours ok
