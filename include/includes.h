@@ -9,11 +9,14 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+// Version
+const char Version[] = "V00003";
+
 // Debug Print
 #define DEBUG_PRINT     1   // A mettre à 1 pour activer l'envoi de log sur la liaison série
 
 #if DEBUG_PRINT
-	#define SERIAL_DEBUG(x)		        \
+	#define SERIAL_DEBUG(x)		\
         do                              \
         {                               \
            Serial.print(__FILE__);      \
@@ -34,7 +37,7 @@
 #include "utils.h"
 #include "micro.h"
 #include "hardware.h"
-#include "eeprom.h"
+#include "eeprom_user.h"
 
 #include "timer.h"
 #include "bouton.h"

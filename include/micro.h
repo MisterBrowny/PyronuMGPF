@@ -1,8 +1,7 @@
 #ifndef MICRO_H
 #define	MICRO_H
 
-// Version
-const char Version[] = "V00002";
+
 
 // MOD_V0010: trace les évolutions sur la V0010
 // Cette version ajoute la fonctionnalité de pause (Etat = STOP) avec la sortie PAUSE_VALUE

@@ -135,6 +135,6 @@
  C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
  include/constant.h include/utils.h include/micro.h include/hardware.h \
- include/eeprom.h include/timer.h include/bouton.h include/config.h \
+ include/eeprom_user.h include/timer.h include/bouton.h include/config.h \
  include/ecran.h include/register.h include/test.h include/armement.h \
  include/feu.h include/feedback.h include/pixel.h include/st7567s.h

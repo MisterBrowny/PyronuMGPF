@@ -31,20 +31,19 @@ void pixel_init (void)
 	pixels.clear(); // Set all pixel colors to 'off'
 	pixels.show();
 
-	//pixel_set_default(); // Set all pixel default colors (RED  / GREEN / BLUE)
+	pixel_set_default(); // Set all pixel default colors (RED  / GREEN / BLUE)
 	
-
 	SERIAL_DEBUG("Pixel config ends");
 }
 
 void pixel_set_default (void)
 {
 	// pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    pixels.setPixelColor(0, pixels.Color(0, 255, 0));
-	pixels.setPixelColor(1, pixels.Color(0, 255, 0));
-	pixels.setPixelColor(2, pixels.Color(0, 255, 0));
-	pixels.setPixelColor(3, pixels.Color(0, 255, 0));
-	pixels.setPixelColor(4, pixels.Color(0, 255, 0));
+    pixels.setPixelColor(0, pixels.Color(0, 0, 200));
+	pixels.setPixelColor(1, pixels.Color(0, 0, 200));
+	// pixels.setPixelColor(2, pixels.Color(0, 255, 0));
+	// pixels.setPixelColor(3, pixels.Color(0, 255, 0));
+	// pixels.setPixelColor(4, pixels.Color(0, 255, 0));
     pixels.show();   // Send the updated pixel colors to the hardware.
 }
 

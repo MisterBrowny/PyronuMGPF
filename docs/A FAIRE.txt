@@ -92,4 +92,7 @@ X O M
 
 8/ inclure ShiftRegister74HC595 dans le projet direct => FAIT
 
-9/ // TODO vérifier si 5 pause c'est toujours ok
+9/ // TODO vérifier si 5 pause c'est toujours ok => OK pour l'instant
+
+10/ //  TODO MODIFIE LA FCT POUR LED OU TIR
+void register_write (uint8_t Output)

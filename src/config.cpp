@@ -63,7 +63,7 @@ static bool cf_checkout (void)
 	return valid;
 }
 
-// on verifie qu'il n'y a pas d'appel de relais > a 32
+// on verifie qu'il n'y a pas d'appel de relais > à NB_RELAY
 // MOD_V0010 : on permet la valeur PAUSE_VALUE pour la pause
 static bool cf_checkrange (void)
 {
@@ -71,7 +71,7 @@ static bool cf_checkrange (void)
 
 	for (i = 0; i < (NB_RELAY + NB_PAUSE_MAX); i ++)    // MOD_V0010
 	{
-		if (    (Cf.Data[i*CF_SECTOR_SIZE] > 32)
+		if (    (Cf.Data[i*CF_SECTOR_SIZE] > NB_RELAY)
             &&  (Cf.Data[i*CF_SECTOR_SIZE] != PAUSE_VALUE)) // MOD_V0010
         {
             return valid;
@@ -87,9 +87,16 @@ byte cf_check (void)
 {
 	byte valid = false;
 
+	SERIAL_DEBUG("Cf checks ...");
+	
 	if (cf_checksum() && cf_checkout() && cf_checkrange())
 	{
 		valid = true;
+		SERIAL_DEBUG("Cf checks OK");
+	}
+	else
+	{
+		SERIAL_DEBUG("Cf checks NOK");
 	}
 
 	return valid;
@@ -135,12 +142,16 @@ void cf_rcv (void)
 	
 	if (TempsSup(Cf.Time2,TDef100ms))
 	{
+		//SERIAL_DEBUG("Cf receives timeout");
+
 		Cf.Time2 = millis();
 
 		if (TempsSup(Cf.Time1, TDef100ms)) {Cf.Index = 0;}// Rx time out
 	}
 	else if (Cf.Index == CF_SIZE)
 	{// Rx complete
+		SERIAL_DEBUG("Rx complete");
+
 		temp = cf_check();								// Check config
 
 		if (temp == false)
@@ -149,13 +160,18 @@ void cf_rcv (void)
 		}
 		else
 		{// config ok
+			SERIAL_DEBUG("Cf OK, write to eeprom ...");
 
 			eeprom_write_array(&Cf.Data[0], 0, CF_SIZE);	// Write config
+
+			SERIAL_DEBUG("CF written to eeprom");
 
 			for (i = 0; i < CF_SIZE; i ++)					// Raz config
 			{
 				Cf.Data[i] = 0;
 			}
+
+			SERIAL_DEBUG("CF written to eeprom");
 
 			eeprom_read_array(&Cf.Data[0], 0, CF_SIZE);		// Read config
 
@@ -164,10 +180,12 @@ void cf_rcv (void)
 			if (temp == false)
 			{// ecriture eeprom nok
 				ecran_erreur_eepr();
+				SERIAL_DEBUG("CF verified in eeprom KO");
 			}
 			else
 			{// ecriture eeprom ok
 				ecran_write_ok();
+				SERIAL_DEBUG("CF verified in eeprom OK");
 			}
 		}
 		st7567s_refresh();

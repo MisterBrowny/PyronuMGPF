@@ -5,7 +5,7 @@
 
 void setup() {
 	// put your setup code here, to run once:
-
+  
   // Désactive le watchdog en cas de pb  car il y a des while(true)
   //rtc_wdt_protect_off();
   //rtc_wdt_disable();
@@ -13,14 +13,18 @@ void setup() {
 	// Init les entrées / sorties
 	hw_config();
 
+  // Init ecran st7567s
+  st7567s_init();
+
   // Init register
   register_init();
 
+  // Init EEPROM
+  eeprom_init();
+  
   // Init pixel
   pixel_init();
-  // Init ecran st7567s
-  st7567s_init();
-  
+    
   // Init chaine de caractéres à afficher
   ecran_init();
   

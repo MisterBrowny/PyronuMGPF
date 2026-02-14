@@ -22,8 +22,10 @@ const uint8_t Tir[REGISTER_TIR_OUT_NUMBER] =
 void register_init (void)
 {
 	uint8_t led = 0;
+
+	SERIAL_DEBUG("Register init begins");
 	
-	while(1)
+	//while(1)
 	{
 		sr.setAllLow(); // set all pins LOW
 
@@ -35,8 +37,11 @@ void register_init (void)
 
 		sr.setAllLow(); // set all pins LOW
 	}
+
+	SERIAL_DEBUG("Register init end");
 }
 
+//  TODO MODIFIE LA FCT POUR LED OU TIR
 void register_write (uint8_t Output)
 {
 	sr.setAllLow(); // set all pins LOW
