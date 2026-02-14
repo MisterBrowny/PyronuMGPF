@@ -16,7 +16,7 @@ const char Version[] = "V00003";
 #define DEBUG_PRINT     1   // A mettre à 1 pour activer l'envoi de log sur la liaison série
 
 #if DEBUG_PRINT
-	#define SERIAL_DEBUG(x)		\
+	#define SERIAL_DEBUG(x)	        \
         do                              \
         {                               \
            Serial.print(__FILE__);      \

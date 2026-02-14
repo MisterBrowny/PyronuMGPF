@@ -59,7 +59,6 @@ void micro_wait (void)
 				
 				ecran_wait();
 			}
-
 			break;
 	}
 }

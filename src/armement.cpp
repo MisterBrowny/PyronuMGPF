@@ -3,26 +3,35 @@
 struArm Arm;
 
 static void arm_UAlim_1A (void)
-{// TODO faut-il tester COM_TIR ou NB_TIR ?
+{
 	int 	temp = 0;
 	char 	temp_tab[5] = {0};
+	char	result[10];
 
-	//VERROU_TIR = 0;
-	//TIR = 1;
+	// On s'assure que la sécu puissance est inactive
+	// SECU_PUISSANCE fait un ET LOGIQUE avec NB_AT
+	// => donc si SECU_PUISSANCE = LOW pas de puissance pour le tir
+	digitalWrite(SECU_PUISSANCE, LOW);
+	
 	digitalWrite(LOAD_TEST_1A, HIGH);
 
 	delay(10);
 
 	temp = analogRead(U_TEST_1A_ADC);
-
-	//VERROU_TIR = 0;
-	//TIR = 0;
+	
 	digitalWrite(LOAD_TEST_1A, LOW);
+	
+	DecToStr(temp, result);
+
+	SERIAL_DEBUG(result);
 
 	Arm.U_Alim_1A = (float) temp * CONVERSION_ADC;
 	Arm.U_Alim_1A = Arm.U_Alim_1A * PONT_DIVISEUR;
 	Arm.U_Alim_1A = Arm.U_Alim_1A * 100.0f;
 
+	// TODO vérifier la conversion
+	// Digital value read 206 = 7.26V
+	
 	itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);
 
 	if (Arm.U_Alim_1A < 1000.0f)

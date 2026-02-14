@@ -96,3 +96,6 @@ X O M
 
 10/ //  TODO MODIFIE LA FCT POUR LED OU TIR
 void register_write (uint8_t Output)
+
+11/ // TODO faut-il tester COM_TIR ou NB_TIR ? Lors du test alim 1A au début de l'arment process
+Y a-t-il un risque à écrire si digitalWrite(LOAD_TEST_1A, HIGH);
