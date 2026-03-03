@@ -1,0 +1,30 @@
+TODO
+
+6/ seuls les deux premiers Pixel RGB sont piloté
+  une piste ?
+  si je change la couleur dans la fonction d'init les deux dernière led prenne la couleur précédente et les deux premi_re led prennent la nouvelle
+  les couleurs semblent être latché trop tot
+=> led 3 dead on verra sur les nouvelles cartes
+
+7/ On teste ligne après de manière auto puis
+déroule par rapport au programme on teste les sorties les unes apres les autres
+
+=> a chaque résultat OK la led s'allume
+=> a chaque résultat Moyen la led clignote
+=> a chaque résultat NOK la led flash rapidement
+
+=> si le tir est Hors config alors la led reste éteinte
+
+
+=> a chaque résultat KO l'écran affiche le numéro de la sortie et le  puis est relancé si l'utilisateur 
+
+=> les résultats sont stockés dans un tableau puis à la fin 
+=> affiché sur lécran dans le mesure du possible 
+O / M / K / O / M / A
+X O M
+
+
+11/ // TODO faut-il tester COM_TIR ou NB_TIR ? Lors du test alim 1A au début de l'arment process
+Y a-t-il un risque à écrire si digitalWrite(LOAD_TEST_1A, HIGH);
+
+12/ revoir les messages affichés sur écranprévoir OLD_STYLE précompile

@@ -26,9 +26,9 @@ static void feu_tir (byte Output)
 {
 	digitalWrite(SECU_PUISSANCE, HIGH);
 
-	register_write(Output);
+	register_one_tir_on(Output);
 	delay(DefTempsTir);
-	register_write(0);
+	register_raz();
 
 	digitalWrite(SECU_PUISSANCE, LOW);
 

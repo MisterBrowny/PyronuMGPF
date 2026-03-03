@@ -256,7 +256,7 @@ byte test_process (void)
                 }
                 else
                 {
-                    register_write(Cf.Data[Test.Cpt*3]);
+                    register_one_tir_on(Cf.Data[Test.Cpt*3]);
                     Test.Step = TEST_INFLA_2;
                 }
                 Test.Time = millis();
@@ -272,7 +272,7 @@ byte test_process (void)
 
 				// Affiche le num de l'infla testé
 				ecran_print_num(Cf.Data[Test.Cpt*3]);
-				register_write(0);
+				register_raz();
 				
 				Test.Time = millis();
 			}
@@ -345,7 +345,7 @@ byte test_process (void)
 		case TEST_INFLA_P0:
 			if (TempsSup(Test.Time, TDef20ms))
 			{
-				register_write((byte) (Test.Cpt + 1));
+				register_one_tir_on((byte) (Test.Cpt + 1));
 				Test.Step = TEST_INFLA_2_P0;
 				Test.Time = millis();
 			}
@@ -361,7 +361,7 @@ byte test_process (void)
 
 				// Affiche le num de l'infla testé
 				ecran_print_num((byte) (Test.Cpt + 1));
-				register_write(0);
+				register_raz();
 					
 				Test.Time = millis();
 			}

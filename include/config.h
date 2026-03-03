@@ -2,8 +2,8 @@
 #define	CONFIG_H
 
 
-#define PAUSE_VALUE         99  // MOD_V0010: valeur de sortie pour activer la pause
-#define NB_PAUSE_MAX        5   // MOD_V0010: nb de pause max dans la séquence // TODO vérifier si 5 pause c'est toujours ok
+#define PAUSE_VALUE         99  	// MOD_V0010: valeur de sortie pour activer la pause
+#define NB_PAUSE_MAX        10   	// MOD_V0010: nb de pause max dans la séquence // Passage à 10
 #define	NB_RELAY			16
 #define	CF_SECTOR_SIZE		3
 #define	CF_CONTROL_SIZE		5

@@ -14,9 +14,11 @@ extern const uint8_t Led[REGISTER_LED_NUMBER];
 
 extern const uint8_t Tir[REGISTER_TIR_OUT_NUMBER];
 
-
 void register_init (void);
-void register_write (uint8_t Output);
+void register_write_one_high (uint8_t Output);
+void register_one_led_on (uint8_t led);
+void register_one_tir_on (uint8_t tir);
+void register_raz (void);
 
 #endif	/* REGISTER_H */
 

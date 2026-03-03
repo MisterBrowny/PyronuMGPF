@@ -19,6 +19,11 @@ static bool cf_checksum (void)
 		 &&	((calcul & 0x000000FF) == Cf.Data[OFFSET_CHECKSUM_4]))          // MOD_V0010
 	{
 		valid = true;
+		SERIAL_DEBUG("cf_checksum OK");
+	}
+	else
+	{
+		SERIAL_DEBUG("cf_checksum NOK");
 	}
         
 	if ((Cf.Data[OFFSET_CHECKSUM_1] == 0) && (Cf.Data[OFFSET_CHECKSUM_2] == 0) && (Cf.Data[OFFSET_CHECKSUM_3] == 0) && (Cf.Data[OFFSET_CHECKSUM_4] == 0))   // MOD_V0010
@@ -58,6 +63,11 @@ static bool cf_checkout (void)
 		||	((last_out == 0) && (Cf.Data[i*CF_SECTOR_SIZE] == Cf.Data[OFFSET_LAST_OUTPUT])))
 	{
 		valid = true;
+		SERIAL_DEBUG("cf_checkout OK");
+	}
+	else
+	{
+		SERIAL_DEBUG("cf_checkout NOK");
 	}
 	
 	return valid;
@@ -74,10 +84,13 @@ static bool cf_checkrange (void)
 		if (    (Cf.Data[i*CF_SECTOR_SIZE] > NB_RELAY)
             &&  (Cf.Data[i*CF_SECTOR_SIZE] != PAUSE_VALUE)) // MOD_V0010
         {
+			SERIAL_DEBUG("cf_checkrange NOK");
+			SERIAL_DEBUG(i);
             return valid;
         }
 	}
 
+	SERIAL_DEBUG("cf_checkrange OK");
 	valid = true;
 	
 	return valid;

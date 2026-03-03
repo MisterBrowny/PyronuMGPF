@@ -27,27 +27,41 @@ void register_init (void)
 	
 	//while(1)
 	{
-		sr.setAllLow(); // set all pins LOW
+		register_raz();
 
-		for (led = 0; led < REGISTER_LED_NUMBER; led ++)
+		for (led = 1; led <= REGISTER_LED_NUMBER; led ++)
 		{
-			register_write(Led[led]);
+			register_one_led_on(led);
 			delay(100);
 		}
 
-		sr.setAllLow(); // set all pins LOW
+		register_raz();
 	}
 
 	SERIAL_DEBUG("Register init end");
 }
 
 //  TODO MODIFIE LA FCT POUR LED OU TIR
-void register_write (uint8_t Output)
+void register_write_one_high (uint8_t Output)
 {
-	sr.setAllLow(); // set all pins LOW
+	register_raz();
 	sr.set(Output, HIGH);
 }
 
+void register_one_led_on (uint8_t led)
+{
+	register_write_one_high(Led[led-1]);
+}
+
+void register_one_tir_on (uint8_t tir)
+{
+	register_write_one_high(Tir[tir-1]);
+}
+
+void register_raz (void)
+{
+	sr.setAllLow(); // set all pins LOW
+}
 
 // void loop() {
 
