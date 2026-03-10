@@ -1,6 +1,7 @@
 #ifndef HARDWARE_H
 #define	HARDWARE_H
 
+#define TXS0108_OE_PRESENT 1
 
 // ENTREES 
 #define BP_TEST             4   // GPIO4    / pin7          / NumPin bouton BP_TEST (anciennement ID_TEST) à pull up

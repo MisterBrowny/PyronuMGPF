@@ -51,7 +51,7 @@ const char Version[] = "V00003";
 
 #include "pixel.h"
 #include "st7567s.h"
-
+#include "modbus.h"
 
 #endif	/* INCLUDE_H */
 

@@ -33,6 +33,9 @@ void setup() {
   // Vérifie état COMU_TEST
 	check_comutest(LOW);
 
+  // Init modbus
+  modbus_init();
+
 	// Vérifie si ID_TEST et BP_ON appuyé pour entrer en mode program_0
 	if (check_program_0() == false)
 	{
@@ -140,7 +143,8 @@ void loop() {
   // put your main code here, to run repeatedly:
   bouton_refresh();
   st7567s_refresh();
-
+  modbus_refresh();
+  
   switch (Micro.Phase)
   {
     case MICRO_WAIT:

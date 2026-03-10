@@ -138,4 +138,4 @@
  include/eeprom_user.h include/timer.h include/bouton.h include/config.h \
  include/ecran.h include/register.h include/test.h include/armement.h \
  include/feu.h include/feedback.h include/pixel.h include/st7567s.h \
- include/EEPROM.h
+ include/modbus.h include/EEPROM.h

@@ -21,10 +21,36 @@ déroule par rapport au programme on teste les sorties les unes apres les autres
 => les résultats sont stockés dans un tableau puis à la fin 
 => affiché sur lécran dans le mesure du possible 
 O / M / K / O / M / A
-X O M
-
+X / O / M / K / M / A
 
 11/ // TODO faut-il tester COM_TIR ou NB_TIR ? Lors du test alim 1A au début de l'arment process
 Y a-t-il un risque à écrire si digitalWrite(LOAD_TEST_1A, HIGH);
 
 12/ revoir les messages affichés sur écranprévoir OLD_STYLE précompile
+
+13/ pouvoir tirer plus vite
+register_one_tir_on
+
+14/ Retour RS485
+Resultat de test boitier : 
+Etat boitier : ARMED - GO - TEST - END
+
+Ca s'est fait en hard
+clé AT 
+bouton S
+
+15/ Pour les Adresses fixes à noté en config
+Numboitier=1 
+
+16/ Chargement par bus 
+
+17/ #define TXS0108_OE_PRESENT 1 => permet d'activer la sortie pour activer le convertisseur de niveau 3.3V <-> 5V
+
+18/ permettre la modification du numéro de slave en mode programmation
+
+19/ Ajouter un état PROG 
+  => c'est seulement dans cet état que la rubrique config devrait pouvoir s'afficher.
+
+20/
+  Dans l'état TEST et ARMED affiché le test INFLA
+  Dans l'état GO et END affiché les lignes tirées 

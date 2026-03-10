@@ -1,0 +1,4 @@
+Pour installer les dépendances :
+
+python -m pip install nicegui
+python -m pip install pymodbus

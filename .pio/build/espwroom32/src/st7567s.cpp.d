@@ -138,6 +138,7 @@
  include/eeprom_user.h include/timer.h include/bouton.h include/config.h \
  include/ecran.h include/register.h include/test.h include/armement.h \
  include/feu.h include/feedback.h include/pixel.h include/st7567s.h \
+ include/modbus.h \
  C:/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
  C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
  include/lib\st7567sfGK_128x64_i2c_LCD_driver_for_Generation_Klick\src\st7567sfGK.h \
