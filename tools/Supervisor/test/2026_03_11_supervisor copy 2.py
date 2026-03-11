@@ -12,19 +12,16 @@ from pymodbus.client import ModbusSerialClient as ModbusClient
 import asyncio
 import time
 import re
-import serial.tools.list_ports 
-import logging
 
-logging.getLogger("pymodbus").setLevel(logging.CRITICAL)
 # ────────────────────────────────────────────────
 # CONFIGURATION (à personnaliser !)
 # ────────────────────────────────────────────────
-selected_port = None
+PORT = 'COM20'           # ← À CHANGER
 BAUDRATE = 9600
 PARITY = 'N'
 STOPBITS = 1
 BYTESIZE = 8
-TIMEOUT = 0.06
+TIMEOUT = 0.1
 
 NUM_DEVICES = 20
 NUM_ANALOG_INPUTS = 16
@@ -35,16 +32,14 @@ CONFIG_START_REG   = 3       # ← À CHANGER : adresse de départ config
 CONFIG_NUM_REGS    = 8         # ← À CHANGER : combien de registres lire/écrire
 
 SLAVE_IDS = list(range(1, NUM_DEVICES + 1))
-active_slaves = set()
 
-REFRESH_INTERVAL = 0
+REFRESH_INTERVAL = 0.1
 
 GLOBAL_MAP = {
-    0: ("DECO",  "text-3xl text-red-700 font-bold"),
-    1: ("END",   "text-3xl text-yellow-700 font-bold"),
-    2: ("GO",    "text-3xl text-red-600 font-bold"),
-    3: ("ARMED", "text-3xl text-orange-500 font-bold"),
-    4: ("TEST",  "text-3xl text-green-600 font-bold"),
+    0: ("END",    "text-2xl text-gray-700 font-bold"),
+    1: ("GO",     "text-2xl text-green-600 font-bold"),
+    2: ("ARMED",  "text-2xl text-blue-600 font-bold"),
+    3: ("TEST",   "text-2xl text-orange-600 font-bold"),
 }
 
 ANALOG_MAP = {
@@ -54,46 +49,30 @@ ANALOG_MAP = {
     0b11: ("OK",     "text-2xl text-green-600 font-bold"),
 }
 
-DEFAULT_GLOBAL = ("NOT CONNECTED", "text-4xl text-purple-600 font-bold")
+DEFAULT_GLOBAL = ("???", "text-2xl text-purple-600 font-bold")
 DEFAULT_ANALOG = ("ERR", "text-2xl text-red-600 font-bold")
 
-def get_available_ports():
-    """Retourne la liste des ports COM disponibles"""
-    ports = serial.tools.list_ports.comports()
-    return [p.device for p in ports] or ["Aucun port détecté"]
 
 # ────────────────────────────────────────────────
 # FONCTIONS MODBUS
 # ────────────────────────────────────────────────
-def modbus_absent(analogs):
-    for i in range(NUM_ANALOG_INPUTS):
-        shift = i * 2
-        val2 = (0x00000000 >> shift) & 0b11
-        analogs.append(ANALOG_MAP.get(0b00, DEFAULT_ANALOG))
-
 def modbus_read(slave_id: int):
-    client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
+    client = ModbusClient(port=PORT, baudrate=BAUDRATE,
                           parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
-                          timeout=TIMEOUT, retries=0, trace_connect=True)
+                          timeout=TIMEOUT)
     try:
-        analogs = []
-
         if not client.connect():
-            modbus_absent(analogs) 
-            # print("Connexion impossible")      
-            return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, "Connexion impossible"
+            return None, None, "Connexion impossible"
         
         # print("ICI")
 
         resp = client.read_holding_registers(GLOBAL_STATE_REG, count=3, device_id=slave_id)
         if resp.isError():
-            return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, str(resp)
+            return None, None, str(resp)
 
         regs = resp.registers
         if len(regs) != 3:
-            modbus_absent(analogs)
-            print("Réponse incomplète")
-            return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, "Réponse incomplète"
+            return None, None, "Réponse incomplète"
 
         global_val = regs[0] & 0xFF
         global_state = GLOBAL_MAP.get(global_val, DEFAULT_GLOBAL)
@@ -102,6 +81,7 @@ def modbus_read(slave_id: int):
         high = regs[2]
         bits32 = (high << 16) | low
 
+        analogs = []
         for i in range(NUM_ANALOG_INPUTS):
             shift = i * 2
             val2 = (bits32 >> shift) & 0b11
@@ -110,15 +90,13 @@ def modbus_read(slave_id: int):
         return global_state, analogs, None
 
     except Exception as e:
-        modbus_absent(analogs)
-        # print(str(e))
-        return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, str(e)
+        return None, None, str(e)
     finally:
         client.close()
 
 
 def modbus_read_config(slave_id: int, num_regs: int):
-    client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
+    client = ModbusClient(port=PORT, baudrate=BAUDRATE,
                           parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
                           timeout=TIMEOUT)
     try:
@@ -156,7 +134,7 @@ async def modbus_write_config(slave_id: int, hex_string: str):
             lo = bytes_data[i + 1] if i + 1 < len(bytes_data) else 0
             values.append((hi << 8) | lo)
 
-        client = ModbusClient(method='rtu', port=selected_port, baudrate=BAUDRATE,
+        client = ModbusClient(method='rtu', port=PORT, baudrate=BAUDRATE,
                               parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
                               timeout=TIMEOUT)
         try:
@@ -190,56 +168,21 @@ def is_valid_hex(value: str) -> bool:
 # ────────────────────────────────────────────────
 # INTERFACE
 # ────────────────────────────────────────────────
-
-def toggle_slave(e, sid):
-    if e.value:
-        active_slaves.add(sid)
-    else:
-        active_slaves.discard(sid)
-    # print(active_slaves)  # pour vérifier
-
 @ui.page('/')
 async def main_page():
-    with ui.row().classes('text-stretch gap-10 mb-2'):
-        ui.label('MGPF Monitor').classes('mt-4 text-2xl font-bold text-center')
-    
-    # ui.separator()
-    # ==================== PORT COM SÉLECTIONNABLE ====================
-    
-        port_select = ui.select(
-            options=get_available_ports(),
-            value=selected_port,
-            label='Port COM'
-        ).classes('text-center w-32')
+    ui.label('Supervision PyronuMGPF').classes('text-2xl font-bold text-center mt-4 mb-1')
+    ui.label('État global + 16×2 bits + config (envoi / lecture séparés)').classes('text-center text-gray-600 mb-3')
 
-        async def change_port(e):
-            global selected_port
-            selected_port = e.value
-            ui.notify(f'Port changé → {selected_port}', type='info')
-
-        port_select.on_value_change(change_port)
-
-        # ui.button('↻ Ports', on_click=lambda: port_select.set_options(get_available_ports()))\
-        #     .props('round dense')
-        # ui.button(
-        #     'Ports',
-        #     icon='refresh',
-        #     on_click=lambda: port_select.set_options(get_available_ports())
-        # ).props('rounded unelevated color=primary dense')
-        ui.button(
-            '',
-            icon='refresh',
-            on_click=lambda: port_select.set_options(get_available_ports())
-        ).props('rounded-lg unelevated color=primary').classes('mt-3 text-center px-4 py-2 shadow-md ')
+    ui.separator()
 
     # Création des onglets
     with ui.tabs().classes('w-full text-3xl') as tabs:
         tab_list = []
         for dev in range(1, NUM_DEVICES + 1):
             sid = SLAVE_IDS[dev - 1]
-            tab_list.append(ui.tab(f'PYRO {sid:02d}'))
+            tab_list.append(ui.tab(f'PyronuMGPF {dev:02d} – ID {sid}'))
 
-    with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full shadow-lg rounded-xl'):
+    with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full'):
         global_labels = {}
         analog_labels = {}
         last_update = {}
@@ -252,26 +195,18 @@ async def main_page():
 
             with ui.tab_panel(tab):
                 with ui.card().classes('w-full'):
-                    with ui.row().classes('items-center gap-6 mb-2'):
-                        ui.label(f'PyronuMGPF {sid:02d}').classes('text-3xl font-semibold mb-2')
-                        ui.checkbox(f'Active refresh', value=False).classes('text-1xl font-semibold').on_value_change(lambda e, s=sid: toggle_slave(e, s))
-
+                    ui.label(f'PyronuMGPF {dev_idx} • Id {sid}').classes('text-3xl font-semibold mb-4')
 
                     # État global
-                    with ui.row().classes('items-center gap-6 mb-0'):
-                        ui.label('  Statut :').classes('text-3xl')
-                        g = ui.label('—').classes('text-4xl font-bold')
+                    with ui.row().classes('items-center gap-4 mb-5'):
+                        ui.label('État :').classes('text-3xl')
+                        g = ui.label('—').classes('text-3xl font-bold')
                         global_labels[dev_idx] = g
-                       
-                    # with ui.row().classes('items-center gap-4 mb-6'):
-                    #     ui.label('État :').classes('text-2xl')
-                    #     g = ui.label('—').classes('text-2xl font-bold')
-                    #     global_labels[dev_idx] = g
 
                     ui.separator()
 
                     # Test Infla
-                    ui.label('Test Infla').classes('text-2xl mt-0 mb-2')
+                    ui.label('Test Infla').classes('text-3xl mt-4 mb-2')
                     # with ui.grid(columns={'default': 2, 'sm': 3, 'md': 4}).classes('gap-3 w-full'):
                     #     analogs = []
                     #     for i in range(1, NUM_ANALOG_INPUTS + 1):
@@ -315,19 +250,19 @@ async def main_page():
                     #                 lbl = ui.label('—').classes('text-xl font-mono mt-1')
                     #                 analogs[i-1] = lbl
                     #     analog_labels[dev_idx] = analogs
-                    with ui.grid(columns=2).classes('w-full gap-6'):
+                    with ui.grid(columns=2).classes('w-full gap-4 shadow-sm'):
 
                         analogs = [None] * NUM_ANALOG_INPUTS
 
                         for i in range(1, NUM_ANALOG_INPUTS + 1):
-                            with ui.column().classes('items-center bg-zinc-700 p-1 rounded-3xl w-auto'):
-                                ui.label(f'TIR {i:02d}').classes('text-1xl text-white-500')
-                                lbl = ui.label('—').classes('text-2xl font-mono mt-1')
+                            with ui.column().classes('items-center bg-gray-50 p-3 rounded w-full'):
+                                ui.label(f'TIR {i:02d}').classes('text-3xl text-gray-700')
+                                lbl = ui.label('—').classes('text-6xl font-mono mt-1')
                                 analogs[i-1] = lbl
 
                         analog_labels[dev_idx] = analogs
 
-                    last_update[dev_idx] = ui.label('jamais').classes('text-lg text-gray-500 mt-5 italic text-center')
+                    last_update[dev_idx] = ui.label('jamais').classes('text-sm text-gray-500 mt-5 italic text-center')
 
                     # Configuration - deux champs
                     ui.separator()
@@ -425,14 +360,9 @@ async def main_page():
         now_str = time.strftime('%H:%M:%S')
 
         for dev in range(1, NUM_DEVICES + 1):
-            err = 1
-            if dev in active_slaves:
-                g_state, a_states, err = await asyncio.to_thread(modbus_read, SLAVE_IDS[dev-1])
-            else:
-                err=2
-            #     g_state='NO_REFRESH'
+            g_state, a_states, err = await asyncio.to_thread(modbus_read, SLAVE_IDS[dev-1])
 
-            if err==1:
+            if err:
                 has_err = True
                 global_labels[dev].text = 'ERR'
                 global_labels[dev].classes(replace='text-red-600')
@@ -441,18 +371,10 @@ async def main_page():
                     lbl.classes(replace='text-red-600')
                 last_update[dev].text = f'erreur {now_str}'
                 last_update[dev].classes(replace='text-red-600')
-            elif err==2:
-                global_labels[dev].text = 'NO_REFRESH'
-                global_labels[dev].classes(replace='text-2xl text-gray-700')
-                for lbl in analog_labels[dev]:
-                    lbl.text = 'NO_REFRESH'
-                    lbl.classes(replace='text-2xl text-gray-600')
-                last_update[dev].text = f'no_refresh {now_str}'
-                last_update[dev].classes(replace='text-gray-700')
             else:
                 txt, cls = g_state
                 global_labels[dev].text = txt
-                global_labels[dev].classes(replace=cls)
+                global_labels[dev].classes(replace=f'text-{cls}')
 
                 for i, (txt, cls) in enumerate(a_states):
                     analog_labels[dev][i].text = txt
@@ -474,7 +396,7 @@ async def main_page():
             await refresh_all()
             await asyncio.sleep(REFRESH_INTERVAL)
 
-    ui.timer(1, auto_refresh, once=True)
+    ui.timer(0.5, auto_refresh, once=True)
 
 
 if __name__ in {"__main__", "__mp_main__"}:
