@@ -2,3 +2,5 @@ Pour installer les dépendances :
 
 python -m pip install nicegui
 python -m pip install pymodbus
+
+pyinstaller --onedir --noconsole --icon=icon.ico --noconfirm --collect-all nicegui --collect-all pymodbus --hidden-import serial --add-data "asset;asset" --collect-data nicegui supervisor.py

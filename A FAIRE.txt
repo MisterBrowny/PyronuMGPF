@@ -54,3 +54,8 @@ Numboitier=1
 20/
   Dans l'état TEST et ARMED affiché le test INFLA
   Dans l'état GO et END affiché les lignes tirées 
+
+21/ Definir un SNXXXX pour chaque pyro
+attribuer un n° de slave
+
+22/ Prévoir un autre état ABSENT_CFG

@@ -7,15 +7,24 @@ Supervision Modbus RTU - 20 esclaves
 Version NiceGUI actuelle (tab + tab_panel)
 """
 
-from nicegui import ui
+from nicegui import ui, app
 from pymodbus.client import ModbusSerialClient as ModbusClient
 import asyncio
 import time
 import re
 import serial.tools.list_ports 
 import logging
+import sys
+import multiprocessing
+import os
+
+if sys.stdout is None:
+    sys.stdout = open("nul", "w")
+if sys.stderr is None:
+    sys.stderr = open("nul", "w")
 
 logging.getLogger("pymodbus").setLevel(logging.CRITICAL)
+
 # ────────────────────────────────────────────────
 # CONFIGURATION (à personnaliser !)
 # ────────────────────────────────────────────────
@@ -198,10 +207,28 @@ def toggle_slave(e, sid):
         active_slaves.discard(sid)
     # print(active_slaves)  # pour vérifier
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
 @ui.page('/')
+
 async def main_page():
+    asset_path = resource_path('asset')
+
+    app.add_static_files('/asset', asset_path)
+
+    ui.add_head_html('<link rel="icon" href="/asset/icon.ico">')
+    # app.add_static_files('/asset', 'asset')
+    # ui.add_head_html('<link rel="icon" href="/asset/icon.ico">')
+
     with ui.row().classes('text-stretch gap-10 mb-2'):
-        ui.label('MGPF Monitor').classes('mt-4 text-2xl font-bold text-center')
+        ui.image('/asset/logo_mgpf.png').classes('w-40 rounded shadow')
+        ui.label('Supervisor').classes('mt-8 text-red-800 text-6xl font-bold text-center')
     
     # ui.separator()
     # ==================== PORT COM SÉLECTIONNABLE ====================
@@ -210,7 +237,7 @@ async def main_page():
             options=get_available_ports(),
             value=selected_port,
             label='Port COM'
-        ).classes('text-center w-32')
+        ).classes('mt-9 text-center w-32')
 
         async def change_port(e):
             global selected_port
@@ -230,7 +257,7 @@ async def main_page():
             '',
             icon='refresh',
             on_click=lambda: port_select.set_options(get_available_ports())
-        ).props('rounded-lg unelevated color=primary').classes('mt-3 text-center px-4 py-2 shadow-md ')
+        ).props('rounded-lg unelevated color=primary').classes('mt-12 text-center px-4 py-2 shadow-md ')
 
     # Création des onglets
     with ui.tabs().classes('w-full text-3xl') as tabs:
@@ -416,6 +443,7 @@ async def main_page():
 
     ui.separator()
     global_status = ui.label('Auto-refresh toutes les 5 s').classes('text-center mt-4 mb-2')
+    
 
     async def refresh_all():
         global_status.text = 'Lecture états en cours...'
@@ -476,12 +504,39 @@ async def main_page():
 
     ui.timer(1, auto_refresh, once=True)
 
+    async def close_app():
+        os._exit(0)
 
-if __name__ in {"__main__", "__mp_main__"}:
+    app.on_disconnect(close_app)
+
+
+def main():  
+
     ui.run(
         title='MGPF',
+        favicon='asset/icon.ico',
         host='0.0.0.0',
         port=8080,
         dark=True,
-        reload=True,
+        reload=False,
+        show=True,
+        access_log=False,
     )
+
+#if __name__ in {"__main__", "__mp_main__"}:
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    main()
+   
+
+    # ui.label('MGPF')
+
+    # ui.run(
+    #     title='MGPF',
+    #     log_level='warning',
+    #     access_log=False,
+    #     host='0.0.0.0',
+    #     port=8080,
+    #     dark=True,
+    #     reload=True,
+    # )
