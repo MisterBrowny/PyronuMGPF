@@ -36,6 +36,8 @@
 #define MODBUS_ANALOG_ALL_KO      0x5555
 #define MODBUS_ANALOG_ALL_ABSENT  0x0000
 
+#define MODBUS_REFRESH_TIME       3000 // ms
+
 uint16_t global_state = 0;                    // 0=DECO, 1=END, 2=GO, 3=ARMED, 4=TEST 5=PROG
 uint16_t analogRegs[2] = {0, 0};             // registre 101 + 102 (32 bits)
 uint16_t configRegs[CONFIG_NUM_REGS] = {0};  // zone libre en lecture/écriture
@@ -76,7 +78,7 @@ void modbus_init (void)
 
 void modbus_app_test(void)
 {
-    if (modbus_test_time - millis() > 3000)
+    if (TempsSup(modbus_test_time,MODBUS_REFRESH_TIME))
     {
         modbus_test_time = millis();
         global_state ++;
@@ -85,7 +87,7 @@ void modbus_app_test(void)
             global_state = MODBUS_STATE_END;
         }
         test_analog_cnt ++;
-        if (test_analog_cnt > MODBUS_ANALOG_NB_VALUE)
+        if (test_analog_cnt >= MODBUS_ANALOG_NB_VALUE)
         {
             test_analog_cnt = 0;
         }

@@ -63,3 +63,5 @@ Numboitier=1
 attribuer un n° de slave
 
 22/ Prévoir un autre état ABSENT_CFG
+
+23/ pourquoi la lecture config ne marche pas ? modif modbus en cause ?
