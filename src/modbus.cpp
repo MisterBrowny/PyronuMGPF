@@ -23,12 +23,29 @@
 #define CONFIG_NUM_REGS   8          // nombre de registres de configuration
 
 // Variables Modbus (holding registers)
-uint16_t globalState = 0;                    // 0=END, 1=GO, 2=ARMED, 3=TEST
+#define MODBUS_STATE_DECO   0
+#define MODBUS_STATE_END    1
+#define MODBUS_STATE_GO     2
+#define MODBUS_STATE_ARMED  3
+#define MODBUS_STATE_TEST   4
+#define MODBUS_STATE_PROG   5
+
+#define MODBUS_ANALOG_NB_VALUE    4
+#define MODBUS_ANALOG_ALL_OK      0xFFFF
+#define MODBUS_ANALOG_ALL_MOYEN   0xAAAA
+#define MODBUS_ANALOG_ALL_KO      0x5555
+#define MODBUS_ANALOG_ALL_ABSENT  0x0000
+
+uint16_t global_state = 0;                    // 0=DECO, 1=END, 2=GO, 3=ARMED, 4=TEST 5=PROG
 uint16_t analogRegs[2] = {0, 0};             // registre 101 + 102 (32 bits)
 uint16_t configRegs[CONFIG_NUM_REGS] = {0};  // zone libre en lecture/écriture
 
 const uint8_t numHoldingRegisters = 11;
 uint16_t holdingRegisters[numHoldingRegisters] = {3, 0xFFFA, 0xAA55, 1, 2, 3, 4, 5, 6, 7, 8};
+
+static uint64_t modbus_test_time;
+static uint8_t test_analog_cnt;
+const uint16_t test_analog[MODBUS_ANALOG_NB_VALUE]={MODBUS_ANALOG_ALL_ABSENT, MODBUS_ANALOG_ALL_KO, MODBUS_ANALOG_ALL_MOYEN, MODBUS_ANALOG_ALL_OK};
 
 // Création de l'objet Modbus
 // ModbusRTUSlave modbus(Serial2, RS485_DE_PIN);
@@ -36,14 +53,14 @@ ModbusRTUSlave modbus(Serial2);
 
 void modbus_init (void) 
 {
-  SERIAL_DEBUG("Start Modbus RTU Slave ID =" + String(SLAVE_ID));
+    SERIAL_DEBUG("Start Modbus RTU Slave ID =" + String(SLAVE_ID));
 
-  // Configuration UART2 pour RS485
-  Serial2.begin(BAUDRATE, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);
+    // Configuration UART2 pour RS485
+    Serial2.begin(BAUDRATE, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);
 
-  // Initialisation Modbus
-  modbus.begin(SLAVE_ID, BAUDRATE, SERIAL_8N1);
-  modbus.configureHoldingRegisters(holdingRegisters, numHoldingRegisters); 
+    // Initialisation Modbus
+    modbus.begin(SLAVE_ID, BAUDRATE, SERIAL_8N1);
+    modbus.configureHoldingRegisters(holdingRegisters, numHoldingRegisters); 
 
 //   // Mise en place des registres avec valeurs initiales
 //   modbus.holdingRegisterWrite(GLOBAL_STATE_REG, globalState);
@@ -54,12 +71,47 @@ void modbus_init (void)
 //     modbus.holdingRegisterWrite(CONFIG_START_REG + i, configRegs[i]);
 //   }
 
-  Serial.println("Modbus Slave ready !");
+    Serial.println("Modbus Slave ready !");
+}
+
+void modbus_app_test(void)
+{
+    if (modbus_test_time - millis() > 3000)
+    {
+        modbus_test_time = millis();
+        global_state ++;
+        if (global_state > MODBUS_STATE_PROG)
+        {
+            global_state = MODBUS_STATE_END;
+        }
+        test_analog_cnt ++;
+        if (test_analog_cnt > MODBUS_ANALOG_NB_VALUE)
+        {
+            test_analog_cnt = 0;
+        }
+        analogRegs[0] = test_analog[test_analog_cnt];
+        analogRegs[1] = test_analog[test_analog_cnt];
+        holdingRegisters[0] = global_state;
+        holdingRegisters[1] = analogRegs[0];
+        holdingRegisters[2] = analogRegs[1];
+        holdingRegisters[3] ++;
+        holdingRegisters[4] ++;
+        holdingRegisters[5] ++;
+        holdingRegisters[6] ++;
+        holdingRegisters[7] ++;
+        holdingRegisters[8] ++;
+        holdingRegisters[9] ++;
+        holdingRegisters[10] ++;
+        holdingRegisters[11] ++;
+
+    }   
 }
 
 void modbus_refresh (void) 
 {
-  modbus.poll();   // ← indispensable, traite toutes les demandes du maître
+    modbus.poll();   // ← indispensable, traite toutes les demandes du maître
+
+    modbus_app_test();
 // Serial2.println("test !");
   // ================== EXEMPLE : mise à jour des valeurs ==================
   // Tu peux remplacer ces lignes par tes capteurs, boutons, etc.

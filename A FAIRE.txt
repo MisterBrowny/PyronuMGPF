@@ -4,7 +4,11 @@ TODO
   une piste ?
   si je change la couleur dans la fonction d'init les deux dernière led prenne la couleur précédente et les deux premi_re led prennent la nouvelle
   les couleurs semblent être latché trop tot
-=> led 3 dead on verra sur les nouvelles cartes
+=> led 3 dead on verra sur les nouvelles cartes => c'est réglé sur les nouvelles cartes
+
+Quelles sont les idées pour piloter les led ?
+
+
 
 7/ On teste ligne après de manière auto puis
 déroule par rapport au programme on teste les sorties les unes apres les autres

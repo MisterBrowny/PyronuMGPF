@@ -17,8 +17,6 @@ import logging
 import sys
 import multiprocessing
 import os
-import threading
-
 
 if sys.stdout is None:
     sys.stdout = open("nul", "w")
@@ -46,16 +44,16 @@ CONFIG_START_REG   = 3       # ← À CHANGER : adresse de départ config
 CONFIG_NUM_REGS    = 8         # ← À CHANGER : combien de registres lire/écrire
 
 SLAVE_IDS = list(range(1, NUM_DEVICES + 1))
-active_slaves = set(SLAVE_IDS)
+active_slaves = set()
 
 REFRESH_INTERVAL = 0
 
 GLOBAL_MAP = {
-    0: ("DECO",  "text-3xl text-red-700 font-bold"), # PAS UTILS ?
-    1: ("END",   "text-3xl text-yellow-700 font-bold animate-pulse"),
-    2: ("GO",    "text-3xl text-red-600 font-bold animate-pulse"),
-    3: ("ARMED", "text-3xl text-orange-500 font-bold animate-pulse"),
-    4: ("TEST",  "text-3xl text-green-600 font-bold animate-pulse"),
+    0: ("DECO",  "text-3xl text-red-700 font-bold"),
+    1: ("END",   "text-3xl text-yellow-700 font-bold"),
+    2: ("GO",    "text-3xl text-red-600 font-bold"),
+    3: ("ARMED", "text-3xl text-orange-500 font-bold"),
+    4: ("TEST",  "text-3xl text-green-600 font-bold"),
 }
 
 ANALOG_MAP = {
@@ -65,115 +63,68 @@ ANALOG_MAP = {
     0b11: ("OK",     "text-2xl text-green-600 font-bold"),
 }
 
-DEFAULT_GLOBAL = ("???", "text-3xl text-gray-500 font-bold")
-DEFAULT_ANALOG = ("—", "text-2xl font-bold")
-
-DEFAULT_TIME = ("never", "text-base text-gray-500 mt-0 italic text-center")
+DEFAULT_GLOBAL = ("NOT CONNECTED", "text-4xl text-purple-600 font-bold")
+DEFAULT_ANALOG = ("ERR", "text-2xl text-red-600 font-bold")
 
 def get_available_ports():
     """Retourne la liste des ports COM disponibles"""
     ports = serial.tools.list_ports.comports()
     return [p.device for p in ports] or ["Aucun port détecté"]
 
-device_states = {
-    i: {
-        "global": DEFAULT_GLOBAL,
-        "analogs": [DEFAULT_ANALOG] * NUM_ANALOG_INPUTS,
-        "no_refresh": True,
-        "disconnected": False,
-        "last_request": DEFAULT_TIME,
-        "last_response": DEFAULT_TIME,
-    }
-    for i in SLAVE_IDS
-}
-
-modbus_client = None
-modbus_running = True
-
 # ────────────────────────────────────────────────
 # FONCTIONS MODBUS
 # ────────────────────────────────────────────────
+def modbus_absent(analogs):
+    for i in range(NUM_ANALOG_INPUTS):
+        shift = i * 2
+        val2 = (0x00000000 >> shift) & 0b11
+        analogs.append(ANALOG_MAP.get(0b00, DEFAULT_ANALOG))
 
-def read_device(client, sid):
-
+def modbus_read(slave_id: int):
+    client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
+                          parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
+                          timeout=TIMEOUT, retries=0, trace_connect=True)
     try:
-        device_states[sid]["last_request"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
+        analogs = []
 
-        resp = client.read_holding_registers(
-            GLOBAL_STATE_REG,
-            count=3,
-            device_id=sid
-        )
+        if not client.connect():
+            modbus_absent(analogs) 
+            # print("Connexion impossible")      
+            return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, "Connexion impossible"
         
+        # print("ICI")
+
+        resp = client.read_holding_registers(GLOBAL_STATE_REG, count=3, device_id=slave_id)
         if resp.isError():
-            device_states[sid]["no_refresh"] = False
-            device_states[sid]["disconnected"] = True
-            return
+            return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, str(resp)
 
         regs = resp.registers
+        if len(regs) != 3:
+            modbus_absent(analogs)
+            print("Réponse incomplète")
+            return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, "Réponse incomplète"
 
         global_val = regs[0] & 0xFF
         global_state = GLOBAL_MAP.get(global_val, DEFAULT_GLOBAL)
 
         low = regs[1]
         high = regs[2]
-
         bits32 = (high << 16) | low
 
-        analogs = []
-
         for i in range(NUM_ANALOG_INPUTS):
-
-            val2 = (bits32 >> (i * 2)) & 0b11
+            shift = i * 2
+            val2 = (bits32 >> shift) & 0b11
             analogs.append(ANALOG_MAP.get(val2, DEFAULT_ANALOG))
 
-        device_states[sid]["global"] = global_state
-        device_states[sid]["analogs"] = analogs
-        device_states[sid]["no_refresh"] = False
-        device_states[sid]["disconnected"] = False
-        device_states[sid]["last_response"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
+        return global_state, analogs, None
 
-    except Exception:
-        device_states[sid]["no_refresh"] = False
-        device_states[sid]["disconnected"] = True
+    except Exception as e:
+        modbus_absent(analogs)
+        # print(str(e))
+        return GLOBAL_MAP.get(0, DEFAULT_GLOBAL), analogs, str(e)
+    finally:
+        client.close()
 
-def modbus_worker():
-
-    global modbus_client
-
-    while modbus_running:
-
-        if selected_port is None:
-            time.sleep(1)
-            continue
-        
-        try:
-            if modbus_client is None:
-                modbus_client = ModbusClient(
-                    port=selected_port,
-                    baudrate=BAUDRATE,
-                    parity=PARITY,
-                    stopbits=STOPBITS,
-                    bytesize=BYTESIZE,
-                    timeout=TIMEOUT,
-                    retries=0
-                )
-                modbus_client.connect()
-
-            for sid in active_slaves:
-                read_device(modbus_client, sid)
-
-        except Exception:
-            if modbus_client:
-                try:
-                    modbus_client.close()
-                except:
-                    pass
-
-            modbus_client = None
-            time.sleep(1)
-
-        time.sleep(REFRESH_INTERVAL)
 
 def modbus_read_config(slave_id: int, num_regs: int):
     client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
@@ -249,21 +200,19 @@ def is_valid_hex(value: str) -> bool:
 # INTERFACE
 # ────────────────────────────────────────────────
 
+def toggle_slave(e, sid):
+    if e.value:
+        active_slaves.add(sid)
+    else:
+        active_slaves.discard(sid)
+    # print(active_slaves)  # pour vérifier
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
-
-def toggle_all_slave(e):
-    for sid in SLAVE_IDS:
-        if e.value:
-            active_slaves.add(sid)
-        else:
-            active_slaves.discard(sid)
-            device_states[sid]["no_refresh"] = True
-
 
 
 @ui.page('/')
@@ -274,11 +223,14 @@ async def main_page():
     app.add_static_files('/asset', asset_path)
 
     ui.add_head_html('<link rel="icon" href="/asset/icon.ico">')
+    # app.add_static_files('/asset', 'asset')
+    # ui.add_head_html('<link rel="icon" href="/asset/icon.ico">')
 
     with ui.row().classes('text-stretch gap-10 mb-2'):
         ui.image('/asset/logo_mgpf.png').classes('w-40 rounded shadow')
         ui.label('Supervisor').classes('mt-8 text-red-800 text-6xl font-bold text-center')
     
+    # ui.separator()
     # ==================== PORT COM SÉLECTIONNABLE ====================
     
         port_select = ui.select(
@@ -294,15 +246,20 @@ async def main_page():
 
         port_select.on_value_change(change_port)
 
+        # ui.button('↻ Ports', on_click=lambda: port_select.set_options(get_available_ports()))\
+        #     .props('round dense')
+        # ui.button(
+        #     'Ports',
+        #     icon='refresh',
+        #     on_click=lambda: port_select.set_options(get_available_ports())
+        # ).props('rounded unelevated color=primary dense')
         ui.button(
             '',
             icon='refresh',
             on_click=lambda: port_select.set_options(get_available_ports())
         ).props('rounded-lg unelevated color=primary').classes('mt-12 text-center px-4 py-2 shadow-md ')
 
-        ui.checkbox(f'Active refresh', value=True).classes('mt-12 text-1xl font-semibold').on_value_change(lambda e: toggle_all_slave(e))
-
-    # ==================== Création des onglets ====================
+    # Création des onglets
     with ui.tabs().classes('w-full text-3xl') as tabs:
         tab_list = []
         for dev in range(1, NUM_DEVICES + 1):
@@ -312,13 +269,10 @@ async def main_page():
     with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full shadow-lg rounded-xl'):
         global_labels = {}
         analog_labels = {}
-        last_request = {}
-        last_response = {}
+        last_update = {}
         send_inputs = {}
         read_outputs = {}
         status_labels = {}
-        memo_labels = {}
-        memo_state = {}
 
         for dev_idx, tab in enumerate(tab_list, start=1):
             sid = SLAVE_IDS[dev_idx - 1]
@@ -327,19 +281,67 @@ async def main_page():
                 with ui.card().classes('w-full'):
                     with ui.row().classes('items-center gap-6 mb-2'):
                         ui.label(f'PyronuMGPF {sid:02d}').classes('text-3xl font-semibold mb-2')
-                        # ui.checkbox(f'Active refresh', value=False).classes('text-1xl font-semibold').on_value_change(lambda e, s=sid: toggle_slave(e, s))
+                        ui.checkbox(f'Active refresh', value=False).classes('text-1xl font-semibold').on_value_change(lambda e, s=sid: toggle_slave(e, s))
+
 
                     # État global
                     with ui.row().classes('items-center gap-6 mb-0'):
                         ui.label('  Statut :').classes('text-3xl')
                         g = ui.label('—').classes('text-4xl font-bold')
                         global_labels[dev_idx] = g
+                       
+                    # with ui.row().classes('items-center gap-4 mb-6'):
+                    #     ui.label('État :').classes('text-2xl')
+                    #     g = ui.label('—').classes('text-2xl font-bold')
+                    #     global_labels[dev_idx] = g
 
                     ui.separator()
 
                     # Test Infla
                     ui.label('Test Infla').classes('text-2xl mt-0 mb-2')
- 
+                    # with ui.grid(columns={'default': 2, 'sm': 3, 'md': 4}).classes('gap-3 w-full'):
+                    #     analogs = []
+                    #     for i in range(1, NUM_ANALOG_INPUTS + 1):
+                    #         with ui.column().classes('items-center bg-gray-50 p-3 rounded'):
+                    #             ui.label(f'IN {i:02d}').classes('text-sm text-gray-700')
+                    #             lbl = ui.label('—').classes('text-xl font-mono mt-1')
+                    #             analogs.append(lbl)
+                    #     analog_labels[dev_idx] = analogs
+                    # with ui.grid(columns=2).classes('gap-3 w-full'):
+                    #     analogs = []
+                    #     # colonne des entrées impaires
+                    #     with ui.column().classes('gap-3'):
+                    #         for i in range(1, NUM_ANALOG_INPUTS + 1, 2):
+                    #             with ui.column().classes('items-center bg-gray-50 p-3 rounded'):
+                    #                 ui.label(f'IN {i:02d}').classes('text-sm text-gray-700')
+                    #                 lbl = ui.label('—').classes('text-xl font-mono mt-1')
+                    #                 analogs.append(lbl)
+
+                    #     # colonne des entrées paires
+                    #     with ui.column().classes('gap-3'):
+                    #         for i in range(2, NUM_ANALOG_INPUTS + 1, 2):
+                    #             with ui.column().classes('items-center bg-gray-50 p-3 rounded'):
+                    #                 ui.label(f'IN {i:02d}').classes('text-sm text-gray-700')
+                    #                 lbl = ui.label('—').classes('text-xl font-mono mt-1')
+                    #                 analogs.append(lbl)
+                    #     analog_labels[dev_idx] = analogs
+                    # with ui.row().classes('w-full gap-4'):
+                    #     analogs = [None] * NUM_ANALOG_INPUTS
+                    #     # colonne impaire
+                    #     with ui.column().classes('w-1/2 gap-3'):
+                    #         for i in range(1, NUM_ANALOG_INPUTS + 1, 2):
+                    #             with ui.column().classes('items-center bg-gray-50 p-3 rounded w-full'):
+                    #                 ui.label(f'IN {i:02d}').classes('text-sm text-gray-700')
+                    #                 lbl = ui.label('—').classes('text-xl font-mono mt-1')
+                    #                 analogs[i-1] = lbl
+                    #     # colonne paire
+                    #     with ui.column().classes('w-1/2 gap-3'):
+                    #         for i in range(2, NUM_ANALOG_INPUTS + 1, 2):
+                    #             with ui.column().classes('items-center bg-gray-50 p-3 rounded w-full'):
+                    #                 ui.label(f'IN {i:02d}').classes('text-sm text-gray-700')
+                    #                 lbl = ui.label('—').classes('text-xl font-mono mt-1')
+                    #                 analogs[i-1] = lbl
+                    #     analog_labels[dev_idx] = analogs
                     with ui.grid(columns=2).classes('w-full gap-6'):
 
                         analogs = [None] * NUM_ANALOG_INPUTS
@@ -347,18 +349,13 @@ async def main_page():
                         for i in range(1, NUM_ANALOG_INPUTS + 1):
                             with ui.column().classes('items-center bg-zinc-700 p-1 rounded-3xl w-auto'):
                                 ui.label(f'TIR {i:02d}').classes('text-1xl text-white-500')
-                                lbl = ui.label('—').classes('text-2xl font-bold')
+                                lbl = ui.label('—').classes('text-2xl font-mono mt-1')
                                 analogs[i-1] = lbl
 
                         analog_labels[dev_idx] = analogs
 
-                    with ui.row().classes('items-center w-full'):
-                        ui.label('Last request time: ').classes('text-base text-gray-500 mt-0 italic text-center')
-                        last_request[dev_idx] = ui.label('never').classes('text-base text-gray-500 mt-0 italic text-center')
-                    with ui.row().classes('items-center w-full'):
-                        ui.label('Last response time: ').classes('text-base text-gray-500 mt-0 italic text-center')
-                        last_response[dev_idx] = ui.label('never').classes('text-base text-gray-500 mt-0 italic text-center')
-                    
+                    last_update[dev_idx] = ui.label('jamais').classes('text-lg text-gray-500 mt-5 italic text-center')
+
                     # Configuration - deux champs
                     ui.separator()
                     ui.label('Configuration (hex)').classes('text-3xl text-gray-600 mt-6 mb-2')
@@ -447,68 +444,73 @@ async def main_page():
     ui.separator()
     global_status = ui.label('Auto-refresh toutes les 5 s').classes('text-center mt-4 mb-2')
     
-    async def refresh_ui():
 
+    async def refresh_all():
+        global_status.text = 'Lecture états en cours...'
+        #await ui.context.client.request_refresh()
+
+        has_err = False
         now_str = time.strftime('%H:%M:%S')
 
-        for sid in SLAVE_IDS:
-
-            if sid not in active_slaves:
-                if memo_state[sid] == False:
-                    memo_state[sid] = True
-                    memo_labels[sid] = global_labels[sid].text
-
-                global_labels[sid].text = memo_labels[sid] + " (not refreshed)"
-                global_labels[sid].classes(replace='text-3xl text-gray-600')
-                continue
+        for dev in range(1, NUM_DEVICES + 1):
+            err = 1
+            if dev in active_slaves:
+                g_state, a_states, err = await asyncio.to_thread(modbus_read, SLAVE_IDS[dev-1])
             else:
-                memo_state[sid] = False
+                err=2
+            #     g_state='NO_REFRESH'
 
-            state = device_states[sid]
+            if err==1:
+                has_err = True
+                global_labels[dev].text = 'ERR'
+                global_labels[dev].classes(replace='text-red-600')
+                for lbl in analog_labels[dev]:
+                    lbl.text = 'ERR'
+                    lbl.classes(replace='text-red-600')
+                last_update[dev].text = f'erreur {now_str}'
+                last_update[dev].classes(replace='text-red-600')
+            elif err==2:
+                global_labels[dev].text = 'NO_REFRESH'
+                global_labels[dev].classes(replace='text-2xl text-gray-700')
+                for lbl in analog_labels[dev]:
+                    lbl.text = 'NO_REFRESH'
+                    lbl.classes(replace='text-2xl text-gray-600')
+                last_update[dev].text = f'no_refresh {now_str}'
+                last_update[dev].classes(replace='text-gray-700')
+            else:
+                txt, cls = g_state
+                global_labels[dev].text = txt
+                global_labels[dev].classes(replace=cls)
 
-            txt, cls = state["last_request"]
-            last_request[sid].text = txt
-            last_request[sid].classes(replace=cls)
+                for i, (txt, cls) in enumerate(a_states):
+                    analog_labels[dev][i].text = txt
+                    analog_labels[dev][i].classes(replace=cls)
 
-            txt, cls = state["last_response"]
-            last_response[sid].text = txt
-            last_response[sid].classes(replace=cls)
-            
-            if state["disconnected"]:
+                last_update[dev].text = f'màj {now_str}'
+                last_update[dev].classes(replace='text-gray-600')
 
-                global_labels[sid].text = "DISCONNECTED"
-                global_labels[sid].classes(replace='text-3xl text-red-600 animate-pulse')
-                continue
+        global_status.text = f'Dernière màj états : {now_str}  {"• erreurs détectées" if has_err else ""}'
+        global_status.classes(replace='text-red-600' if has_err else 'text-gray-700')
 
-            txt, cls = state["global"]
-
-            global_labels[sid].text = txt
-            global_labels[sid].classes(replace=cls)
-
-            for i, (txt, cls) in enumerate(state["analogs"]):
-
-                analog_labels[sid][i].text = txt
-                analog_labels[sid][i].classes(replace=cls)
-            
-            
-        
-        global_status.text = f'Refresh GUI state : {now_str}'
+    # ui.button('Rafraîchir états maintenant', on_click=refresh_all)\
+    #     .props('outline color=primary size=lg').classes('mx-auto mt-3 block')
+        # Optionnel : petite notification pour confirmer visuellement
+        # ui.notify(f"États rafraîchis ({now_str})", type='positive', timeout=1.5)
     
-    ui.timer(0.5, refresh_ui)
+    async def auto_refresh():
+        while True:
+            await refresh_all()
+            await asyncio.sleep(REFRESH_INTERVAL)
+
+    ui.timer(1, auto_refresh, once=True)
 
     async def close_app():
-        global modbus_running
-        modbus_running = False
         os._exit(0)
 
     app.on_disconnect(close_app)
 
 
 def main():  
-    threading.Thread(
-        target=modbus_worker,
-        daemon=True
-    ).start()
 
     ui.run(
         title='MGPF',
@@ -525,3 +527,16 @@ def main():
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     main()
+   
+
+    # ui.label('MGPF')
+
+    # ui.run(
+    #     title='MGPF',
+    #     log_level='warning',
+    #     access_log=False,
+    #     host='0.0.0.0',
+    #     port=8080,
+    #     dark=True,
+    #     reload=True,
+    # )
