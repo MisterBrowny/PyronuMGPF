@@ -2,7 +2,7 @@
 #define	ST7567S_H
 
 
-#define ST_I2C_SPEED	400000
+#define ST_I2C_SPEED	100000
 
 void st7567s_init (void);
 

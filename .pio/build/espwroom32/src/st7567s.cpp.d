@@ -150,4 +150,5 @@
  include/lib\Adafruit_GFX_Library\Adafruit_SPIDevice.h \
  C:/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src/SPI.h \
  C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-spi.h \
- include/font/Picopixel.h
+ include/font/Picopixel.h include/font/Tiny3x3a2pt7b.h \
+ include/font/TomThumb.h

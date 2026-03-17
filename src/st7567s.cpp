@@ -7,6 +7,8 @@
 
 #include "font/FreeSans9pt7b.h"
 #include "font/Picopixel.h"
+#include "font/Tiny3x3a2pt7b.h"
+#include "font/TomThumb.h"
 
 // Here it is!
 st7567sfGKAdafruit display;
@@ -111,13 +113,74 @@ void st7567s_init (void)
   SERIAL_DEBUG("ST7567s init ends");
 }
 
+
 void st7567s_refresh (void)
 {
-    if (memcmp((const void*) Ecran.Digit, (const void*) Ecran.MemoDigit, NUM_CHAR) != 0)
+  if (Test.print_result == true)
+  {
+    char string_test[100];
+    #if DEBUG_PRINT
+      char string[100];
+    #endif
+    uint8_t i;
+
+    display.textflow(st7567sfGK::toptobottom);
+    display.clear(st7567sfGK::colorblack);
+    display.setFont(&Picopixel);
+
+    display.println("Test results:");
+    for (i = 0; i < 16; i ++)
     {
-        display.textflow(st7567sfGK::toptobottom);
-        display.clear(st7567sfGK::colorblack);
-        display.println((const char*) Ecran.Digits);
-        memcpy((void*)Ecran.MemoDigit, (const void*) Ecran.Digit, NUM_CHAR);
-    }
-}
+      if ((i + 1) < 10)
+      {
+        sprintf(string_test, "Tir %2 d : ", i + 1);
+      }
+      else
+      {
+        sprintf(string_test, "Tir %2 d: ", i + 1);
+      }
+      display.print(string_test);
+      if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
+      {        
+        sprintf(string_test, "OK          ");
+      }
+      else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
+      {
+        sprintf(string_test, "MOYEN  ");
+      }
+      else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
+      {
+        sprintf(string_test, "KO          ");
+      }
+      else
+      {
+        sprintf(string_test, "ABSENT ");
+      }
+      #if DEBUG_PRINT
+        sprintf(string, "index = %d, shift = %d, result = 0x%04X", ((i < 8) ? 0 : 1), ((i < 8) ? i : i - 8)*2, (modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2));
+        SERIAL_DEBUG(string);
+        SERIAL_DEBUG(string_test);
+      #endif
+
+      display.print(string_test);
+      if (i % 2)
+      {
+        display.print("\r\n");
+      }
+      else
+      {
+        display.print("|");
+      }
+    }    
+    
+    Test.print_result = false;
+  }
+  else if (memcmp((const void*) Ecran.Digit, (const void*) Ecran.MemoDigit, NUM_CHAR) != 0)
+  {
+    display.textflow(st7567sfGK::toptobottom);
+    display.clear(st7567sfGK::colorblack);
+    display.setFont(&FreeSans9pt7b);
+    display.println((const char*) Ecran.Digits);
+    memcpy((void*)Ecran.MemoDigit, (const void*) Ecran.Digit, NUM_CHAR);
+  }
+  }

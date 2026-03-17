@@ -7,6 +7,7 @@ TODO
 => led 3 dead on verra sur les nouvelles cartes => c'est réglé sur les nouvelles cartes
 
 Quelles sont les idées pour piloter les led ?
+Pilotage en fonction des Etat Pyronum ?
 
 
 
@@ -18,7 +19,6 @@ déroule par rapport au programme on teste les sorties les unes apres les autres
 => a chaque résultat NOK la led flash rapidement
 
 => si le tir est Hors config alors la led reste éteinte
-
 
 => a chaque résultat KO l'écran affiche le numéro de la sortie et le  puis est relancé si l'utilisateur 
 
@@ -32,8 +32,10 @@ Y a-t-il un risque à écrire si digitalWrite(LOAD_TEST_1A, HIGH);
 
 12/ revoir les messages affichés sur écranprévoir OLD_STYLE précompile
 
-13/ pouvoir tirer plus vite
+13/ pouvoir tirer plus vite 
 register_one_tir_on
+
+quel est la limite 10ms ?
 
 14/ Retour RS485
 Resultat de test boitier : 
@@ -43,8 +45,10 @@ Ca s'est fait en hard
 clé AT 
 bouton S
 
-15/ Pour les Adresses fixes à noté en config
-Numboitier=1 
+15/ Pour les Adresses MODBUS fixes à noté en config
+CFG=Numboitier [1-20]
+SEQ=[Sequence actuelle]
+
 
 16/ Chargement par bus 
 
@@ -65,3 +69,7 @@ attribuer un n° de slave
 22/ Prévoir un autre état ABSENT_CFG
 
 23/ pourquoi la lecture config ne marche pas ? modif modbus en cause ?
+
+24/ else if (Micro.State == STOP)
+        {
+            global_state = MODBUS_STATE_GO; // TODO estce ok ?

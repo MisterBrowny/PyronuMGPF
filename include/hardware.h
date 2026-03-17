@@ -54,7 +54,13 @@
 #define PONT_DIVISEUR	    10.93f		    // ((51000/2) + (100000+150000+3300)) / (51000/2)
 
 // Valeur pour le test U_INFLA 
-#define DefValInflaOK	    94			    // 3.3 x (48 / (48 + 120))
+// #define DefValInflaOK	    94			    // 3.3 x (48 / (48 + 120))
+//                                             // Correspond d'après mesure à 48ohms
+
+#define DefValInflaMOYEN	72			    // 3.3 x (48 / (48 + 120))
+                                            // Correspond d'après mesure à 48ohms
+
+#define DefValInflaNOK	    100			    // 3.3 x (48 / (48 + 120))
                                             // Correspond d'après mesure à 48ohms
 
 // En dessous OK 

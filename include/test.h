@@ -14,20 +14,24 @@
 #define TEST_INFLA_NOK			0x07
 #define TEST_FIN_INFLA			0x08
 #define TEST_FIN_INFLA_2		0x09
-#define TEST_INFLA_P0			0x0A
-#define TEST_INFLA_2_P0			0x0B
-#define TEST_INFLA_OK_P0		0x0C
-#define TEST_INFLA_NOK_P0		0x0D
-#define TEST_FIN_INFLA_P0		0x0E
-#define TEST_FIN_INFLA_P0_2		0x0F
-#define TEST_WAIT_3				0x10
-#define TEST_WAIT_4				0x11
-#define TEST_WAIT_5				0x12
-#define TEST_WAIT_6				0x13
-#define TEST_WAIT_7				0x14
+#define TEST_FIN_INFLA_3		0x0A
+#define TEST_INFLA_P0			0x10
+#define TEST_INFLA_2_P0			0x11
+#define TEST_INFLA_OK_P0		0x12
+#define TEST_INFLA_NOK_P0		0x13
+#define TEST_FIN_INFLA_P0		0x14
+#define TEST_FIN_INFLA_P0_2		0x15
+#define TEST_FIN_INFLA_P0_3		0x16
+#define TEST_WAIT_3				0x20
+#define TEST_WAIT_4				0x21
+#define TEST_WAIT_5				0x22
+#define TEST_WAIT_6				0x23
+#define TEST_WAIT_7				0x24
 
-#define TEST_NO_INFLA_PRINT		0x15    // MOD_V0010
-#define TEST_NO_INFLA_PAUSE		0x16    // MOD_V0010
+#define TEST_NO_INFLA_PRINT		0x30    // MOD_V0010
+#define TEST_NO_INFLA_PAUSE		0x31    // MOD_V0010
+
+#define TEST_PRINT_RESULT		0x40
 
 typedef struct	StructTest{
 	uint8_t			Step;
@@ -35,13 +39,7 @@ typedef struct	StructTest{
 	unsigned long	Time;
 	float			U_Alim;
 	float			U_Infla;
-	float			Test1;
-	float			Test2;
-	float			Test3;
-	float			Test4;
-	float			Test5;
-	float			Test6;
-	float			Test7;
+	bool			print_result;
 }struTest;
 
 extern struTest Test;

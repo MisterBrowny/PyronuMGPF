@@ -1,5 +1,8 @@
 #include "includes.h"
 
+#define PRINT_TEST_OUTPUT	0
+#define TEST_FCT_ANALOG		1
+
 struTest Test;
 
 void check_comutest (byte State)
@@ -208,6 +211,29 @@ int check_UInfla (void)
 	return (int) Test.U_Infla;
 }
 
+void test_update_analog (uint8_t number, uint8_t state)
+{
+// 	if (number > 8)
+// 	{
+// 		analog[0]
+// 		char string[128];
+//   sprintf(string, "%ld %ld %02X %02X %04X %04X %s", transactionCounter, errorCounter, unitId, functionCode, startingAddress, quantity, errorStrings[error]);
+//   Serial.print(string);
+// 	}
+	#if DEBUG_PRINT
+		char string[100];
+		sprintf(string, "output number = %d, state = %02x", number, state);
+		SERIAL_DEBUG(string);
+	#endif
+
+	modbus_analog_register[(((number-1) < 8) ? 0 : 1)] |= state << ((((number-1) < 8) ? (number-1) : (number-8-1)) * 2);
+
+	#if DEBUG_PRINT
+		sprintf(string, "modbus_analog_register[0]=0x%04X, modbus_analog_register[1]=0x%04X", modbus_analog_register[0], modbus_analog_register[1]);
+		SERIAL_DEBUG(string);
+	#endif
+}
+
 byte test_process (void)
 {
 	word temp;
@@ -240,6 +266,8 @@ byte test_process (void)
 				ecran_blank();
 				check_comutest(LOW);
 				Test.Time = millis();
+				modbus_analog_register[0]=0;
+				modbus_analog_register[1]=0;
 			}
 			break;
 		case TEST_INFLA:
@@ -266,12 +294,49 @@ byte test_process (void)
 			if (TempsSup(Test.Time, TDef20ms))
 			{
 				temp = check_UInfla();
-				// Si tension > 0.94V, infla pas OK
-				if (temp > DefValInflaOK) 	{Test.Step = TEST_INFLA_NOK;}
-				else						{Test.Step = TEST_INFLA_OK;}
+				
+				#if TEST_FCT_ANALOG
+					if ((Cf.Data[Test.Cpt*3] % 4) == 0)
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_MOYEN);
+						Test.Step = TEST_INFLA_OK;
+					}
+					else if ((Cf.Data[Test.Cpt*3] % 3) == 0)
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_OK);
+						Test.Step = TEST_INFLA_NOK;
+					}
+					else if ((Cf.Data[Test.Cpt*3] % 2) == 0)
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_KO);
+						Test.Step = TEST_INFLA_NOK;
+					}
+					else
+					{
+						Test.Step = TEST_INFLA_NOK;
+					}	
+				#else
+					if (temp > DefValInflaNOK) 			
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_KO);
+						Test.Step = TEST_INFLA_NOK;
+					}
+					else if (temp > DefValInflaMOYEN) 	
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_MOYEN);
+						Test.Step = TEST_INFLA_NOK;
+					}
+					else
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_OK);
+						Test.Step = TEST_INFLA_OK;
+					}
+				#endif
 
 				// Affiche le num de l'infla testé
-				ecran_print_num(Cf.Data[Test.Cpt*3]);
+				#if PRINT_TEST_OUTPUT
+					ecran_print_num(Cf.Data[Test.Cpt*3]);
+				#endif
 				register_raz();
 				
 				Test.Time = millis();
@@ -279,17 +344,19 @@ byte test_process (void)
 			break;
         // debut MOD_V0010
         case TEST_NO_INFLA_PRINT:	
-			if (TempsSup(Test.Time, TDef20ms))
+			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
 				Test.Step = TEST_NO_INFLA_PAUSE;
 
 				// Affiche le num de la pause
-				ecran_print_num(Cf.Data[Test.Cpt*3]);
+				#if PRINT_TEST_OUTPUT
+					ecran_print_num(Cf.Data[Test.Cpt*3]);
+				#endif
 				Test.Time = millis();
 			}
 			break;
         case TEST_NO_INFLA_PAUSE:
-			if (TempsSup(Test.Time, TDef100ms))
+			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
 				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
@@ -299,7 +366,7 @@ byte test_process (void)
 			break;
         // fin MOD_V0010
 		case TEST_INFLA_OK:
-			if (TempsSup(Test.Time, TDef20ms))
+			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
 				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
@@ -308,8 +375,7 @@ byte test_process (void)
 			}
 			break;
 		case TEST_INFLA_NOK:
-			if (	(Bouton[Bp_IdTest].State == 0)
-				&&	(TempsSup(Test.Time, TDef500ms)))
+			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
 				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;}   // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
@@ -333,11 +399,12 @@ byte test_process (void)
 			Ecran.Digit[2] = '-';
 
 			Test.Step = TEST_FIN_INFLA_2;
+			Test.Time = millis();
 			break;
 		case TEST_FIN_INFLA_2:
-			if (Bouton[Bp_IdTest].State == 0)
+			if (TempsSup(Test.Time, TDef1sec))
 			{
-				Test.Step = TEST_WAIT_3;
+				Test.Step = TEST_PRINT_RESULT;
 
 				Test.Time = millis();
 			}
@@ -355,19 +422,33 @@ byte test_process (void)
 			{
 				temp = check_UInfla();
 
-				// Si tension > 0.94V, infla pas OK
-				if (temp > DefValInflaOK) 	{Test.Step = TEST_INFLA_NOK_P0;}
-				else						{Test.Step = TEST_INFLA_OK_P0;}
+				if (temp > DefValInflaNOK) 			
+				{
+					test_update_analog((byte) (Test.Cpt + 1), ANALOG_KO);
+					Test.Step = TEST_INFLA_NOK;
+				}
+				else if (temp > DefValInflaMOYEN) 	
+				{
+					test_update_analog((byte) (Test.Cpt + 1), ANALOG_MOYEN);
+					Test.Step = TEST_INFLA_NOK;
+				}
+				else
+				{
+					test_update_analog((byte) (Test.Cpt + 1), ANALOG_OK);
+					Test.Step = TEST_INFLA_OK;
+				}
 
 				// Affiche le num de l'infla testé
-				ecran_print_num((byte) (Test.Cpt + 1));
+				#if PRINT_TEST_OUTPUT
+					ecran_print_num((byte) (Test.Cpt + 1));
+				#endif
 				register_raz();
 					
 				Test.Time = millis();
 			}
 			break;
 		case TEST_INFLA_OK_P0:
-			if (TempsSup(Test.Time, TDef20ms))
+			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
 				if (++Test.Cpt > (NB_RELAY - 1))	{Test.Step = TEST_FIN_INFLA_P0;}    // MOD_V0010
 				else								{Test.Step = TEST_INFLA_P0;}
@@ -376,8 +457,7 @@ byte test_process (void)
 			}
 			break;
 		case TEST_INFLA_NOK_P0:
-			if (	(Bouton[Bp_IdTest].State == 0)
-				&&	(TempsSup(Test.Time, TDef500ms)))
+			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
 				if (++Test.Cpt > (NB_RELAY - 1))	{Test.Step = TEST_FIN_INFLA_P0;}    // MOD_V0010
 				else                                {Test.Step = TEST_INFLA_P0;}
@@ -401,20 +481,25 @@ byte test_process (void)
 			Ecran.Digit[2] = '-';
 			
 			Test.Step = TEST_FIN_INFLA_P0_2;
+			Test.Time = millis();
 			break;
 		case TEST_FIN_INFLA_P0_2:
-			if (Bouton[Bp_IdTest].State == 0)
+			if (TempsSup(Test.Time, TDef1sec))
 			{
-				Test.Step = TEST_WAIT_3;
+				Test.Step = TEST_PRINT_RESULT;
 
 				Test.Time = millis();
 			}
 			break;
+		case TEST_PRINT_RESULT:
+			Test.print_result = true;
+			Test.Step = TEST_WAIT_3;
+			break;
 		case TEST_WAIT_3:
-			if (TempsSup(Test.Time, TDef1sec))
+			if (	(Bouton[Bp_IdTest].State == 0)
+				/*||	(TempsSup(Test.Time, TDef10sec))*/)
 			{
 				Test.Step = TEST_WAIT_4;
-
 				ecran_wait();
 			}
 			break;

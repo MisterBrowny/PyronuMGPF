@@ -38,12 +38,12 @@
 
 #define MODBUS_REFRESH_TIME       3000 // ms
 
-uint16_t global_state = 0;                    // 0=DECO, 1=END, 2=GO, 3=ARMED, 4=TEST 5=PROG
-uint16_t analogRegs[2] = {0, 0};             // registre 101 + 102 (32 bits)
+uint16_t global_state = 0;                   // registre 0 : 0=DECO, 1=END, 2=GO, 3=ARMED, 4=TEST 5=PROG
+uint16_t modbus_analog_register[2] = {0, 0};             // registre 1 + 2 (32 bits) : pour les 16 entrées valeur 0b00 "ABSENT", 0b01: "KO", 0b10: "MOYEN", 0b11: "OK" 
 uint16_t configRegs[CONFIG_NUM_REGS] = {0};  // zone libre en lecture/écriture
 
 const uint8_t numHoldingRegisters = 11;
-uint16_t holdingRegisters[numHoldingRegisters] = {3, 0xFFFA, 0xAA55, 1, 2, 3, 4, 5, 6, 7, 8};
+uint16_t holdingRegisters[numHoldingRegisters] = {0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 static uint64_t modbus_test_time;
 static uint8_t test_analog_cnt;
@@ -91,11 +91,11 @@ void modbus_app_test(void)
         {
             test_analog_cnt = 0;
         }
-        analogRegs[0] = test_analog[test_analog_cnt];
-        analogRegs[1] = test_analog[test_analog_cnt];
+        modbus_analog_register[0] = test_analog[test_analog_cnt];
+        modbus_analog_register[1] = test_analog[test_analog_cnt];
         holdingRegisters[0] = global_state;
-        holdingRegisters[1] = analogRegs[0];
-        holdingRegisters[2] = analogRegs[1];
+        holdingRegisters[1] = modbus_analog_register[0];
+        holdingRegisters[2] = modbus_analog_register[1];
         holdingRegisters[3] ++;
         holdingRegisters[4] ++;
         holdingRegisters[5] ++;
@@ -111,9 +111,40 @@ void modbus_app_test(void)
 
 void modbus_refresh (void) 
 {
+    if (Micro.Phase == MICRO_WAIT)
+    {
+        global_state = MODBUS_STATE_TEST;
+    }
+    else if (Micro.Phase == MICRO_TEST)
+    {
+        global_state = MODBUS_STATE_TEST;
+    }    
+    else if (Micro.Phase == MICRO_ARM)
+    {
+        global_state = MODBUS_STATE_ARMED;
+    }    
+    else if (Micro.Phase == MICRO_FEU)
+    {
+        if (Micro.State == GO)
+        {
+            global_state = MODBUS_STATE_GO;
+        }
+        else if (Micro.State == STOP)
+        {
+            global_state = MODBUS_STATE_GO; // TODO estce ok ?
+        }
+        else if (Micro.State == END)
+        {
+            global_state = MODBUS_STATE_END;
+        }
+    }
+    holdingRegisters[0] = global_state;
+    holdingRegisters[1] = modbus_analog_register[0];
+    holdingRegisters[2] = modbus_analog_register[1];
+
     modbus.poll();   // ← indispensable, traite toutes les demandes du maître
 
-    modbus_app_test();
+    // modbus_app_test();
 // Serial2.println("test !");
   // ================== EXEMPLE : mise à jour des valeurs ==================
   // Tu peux remplacer ces lignes par tes capteurs, boutons, etc.
