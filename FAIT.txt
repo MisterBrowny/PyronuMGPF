@@ -47,3 +47,9 @@ void register_write_one_high (uint8_t Output);
 void register_one_led_on (uint8_t led);
 void register_one_tir_on (uint8_t tir);
 void register_raz (void);
+
+
+17/ #define TXS0108_OE_PRESENT 1 => permet d'activer la sortie pour activer le convertisseur de niveau 3.3V <-> 5V
+=> FAIT
+
+22/ Prévoir un autre état ABSENT_CFG => FAIT ABSENT

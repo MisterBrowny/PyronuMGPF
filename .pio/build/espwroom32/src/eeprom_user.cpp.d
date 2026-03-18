@@ -138,4 +138,16 @@
  include/eeprom_user.h include/timer.h include/bouton.h include/config.h \
  include/ecran.h include/register.h include/test.h include/armement.h \
  include/feu.h include/feedback.h include/pixel.h include/st7567s.h \
- include/modbus.h include/EEPROM.h
+ include/lib\st7567sfGK_128x64_i2c_LCD_driver_for_Generation_Klick\src\st7567sfGK.h \
+ C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/Print.h \
+ include/lib\Adafruit_GFX_Library\gfxfont.h include/font/FreeSans9pt7b.h \
+ include/lib\Adafruit_GFX_Library\Adafruit_GFX.h \
+ include/lib\Adafruit_GFX_Library\gfxfont.h \
+ include/lib\Adafruit_GFX_Library\Adafruit_I2CDevice.h \
+ C:/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
+ C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
+ include/lib\Adafruit_GFX_Library\Adafruit_SPIDevice.h \
+ C:/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src/SPI.h \
+ C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-spi.h \
+ include/font/Picopixel.h include/font/Tiny3x3a2pt7b.h \
+ include/font/TomThumb.h include/modbus.h include/EEPROM.h

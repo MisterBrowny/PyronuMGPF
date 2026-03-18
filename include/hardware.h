@@ -51,17 +51,17 @@
 #define CONVERSION_ADC	    0.0032258f		// 3.3 / 1023
 
 // Valeur pour récupérer la tension d'alimentation
-#define PONT_DIVISEUR	    10.93f		    // ((51000/2) + (100000+150000+3300)) / (51000/2)
+#define PONT_DIVISEUR	    12.25f		    // ((51000/2) + (100000+150000+33000)) / (51000/2)
+
+//#define PONT_DIVISEUR_INFLA
 
 // Valeur pour le test U_INFLA 
 // #define DefValInflaOK	    94			    // 3.3 x (48 / (48 + 120))
 //                                             // Correspond d'après mesure à 48ohms
 
-#define DefValInflaMOYEN	72			    // 3.3 x (48 / (48 + 120))
-                                            // Correspond d'après mesure à 48ohms
+#define DefValInflaMOYEN	1000			 // en mV => Correspond d'après mesure à 48ohms // TODO mettre la bonne valeur et la valeur ohmique
 
-#define DefValInflaNOK	    100			    // 3.3 x (48 / (48 + 120))
-                                            // Correspond d'après mesure à 48ohms
+#define DefValInflaNOK	    1820			 // en mV => Correspond d'après mesure à Xohms // TODO mettre la valeur ohmique
 
 // En dessous OK 
 // 36 ohm pour 20mA = 0.72 Volts > acceptable => clignote

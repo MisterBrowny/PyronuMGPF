@@ -1,7 +1,7 @@
 #include "includes.h"
 
-#define PRINT_TEST_OUTPUT	0
-#define TEST_FCT_ANALOG		1
+#define PRINT_TEST_OUTPUT	1
+#define TEST_FCT_ANALOG		0
 
 struTest Test;
 
@@ -156,21 +156,21 @@ void check_bpon (void)
 
 void check_UAlim (void)
 {
-	int 	temp = 0;
-	char 	temp_tab[5] = {0};
+	uint32_t 	temp = 0;
+	char 		temp_tab[5] = {0};
 
-	temp = analogRead(U_TEST_1A_ADC);
+	temp = analogReadMilliVolts(U_TEST_1A_ADC);
 
-	Test.U_Alim = (float) temp * CONVERSION_ADC;
-	Test.U_Alim = Test.U_Alim * PONT_DIVISEUR;
+	//Test.U_Alim = (float) temp * CONVERSION_ADC;
+	Test.U_Alim = temp * PONT_DIVISEUR;
 
 	SERIAL_DEBUG(Test.U_Alim);
 
-	Test.U_Alim = Test.U_Alim * 100.0f;
+	//Test.U_Alim = Test.U_Alim * 100.0f;
 
 	itoa((int) Test.U_Alim, &temp_tab[0], 10);
 
-	if (Test.U_Alim < 1000.0f)
+	if (Test.U_Alim < 10000.0f)
 	{
 		Ecran.Digit[0] = ' ';
 		Ecran.Digit[1] = temp_tab[0];
@@ -192,23 +192,24 @@ void check_UAlim (void)
 	}
 }
 
-int check_UInfla (void)
+uint32_t check_UInfla (void)
 {
-	int temp = 0;
+	uint32_t temp = 0;
 
 	digitalWrite(LOAD_TEST_20mA, HIGH);
 	
-	temp = analogRead(U_TEST_INF);
+	temp = analogReadMilliVolts(U_TEST_INF);
 
 	digitalWrite(LOAD_TEST_20mA, LOW);
 
-	Test.U_Infla = (float) temp * CONVERSION_ADC;
+	//Test.U_Infla = (float) temp * CONVERSION_ADC;
+	Test.U_Infla = temp;
 
 	SERIAL_DEBUG(Test.U_Infla);
 	
-	Test.U_Infla = Test.U_Infla * 100.0f;
+	//Test.U_Infla = Test.U_Infla * 100.0f;
 
-	return (int) Test.U_Infla;
+	return (uint32_t) Test.U_Infla;
 }
 
 void test_update_analog (uint8_t number, uint8_t state)
@@ -268,6 +269,7 @@ byte test_process (void)
 				Test.Time = millis();
 				modbus_analog_register[0]=0;
 				modbus_analog_register[1]=0;
+				Test.no_display_refresh = true;
 			}
 			break;
 		case TEST_INFLA:
@@ -335,7 +337,16 @@ byte test_process (void)
 
 				// Affiche le num de l'infla testé
 				#if PRINT_TEST_OUTPUT
-					ecran_print_num(Cf.Data[Test.Cpt*3]);
+					{
+						char string [100];
+
+						sprintf(string, "Out = %d\r\n Analog = %d", Cf.Data[Test.Cpt*3], temp);
+						display.textflow(st7567sfGK::toptobottom);
+						display.clear(st7567sfGK::colorblack);
+						display.setFont(&FreeSans9pt7b);
+						
+						display.print(string);						
+					}
 				#endif
 				register_raz();
 				
@@ -366,7 +377,9 @@ byte test_process (void)
 			break;
         // fin MOD_V0010
 		case TEST_INFLA_OK:
-			/*if (TempsSup(Test.Time, TDef20ms))*/
+			#if PRINT_TEST_OUTPUT
+				if (TempsSup(Test.Time, TDef3sec))
+			#endif
 			{
 				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
@@ -375,7 +388,9 @@ byte test_process (void)
 			}
 			break;
 		case TEST_INFLA_NOK:
-			/*if (TempsSup(Test.Time, TDef20ms))*/
+			#if PRINT_TEST_OUTPUT
+				if (TempsSup(Test.Time, TDef3sec))
+			#endif
 			{
 				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;}   // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
@@ -384,6 +399,7 @@ byte test_process (void)
 			}
 			break;
 		case TEST_FIN_INFLA:
+			Test.no_display_refresh = false;
 			if (Test.Cpt != 0)
 			{
 				ecran_print_num(Cf.Data[OFFSET_LAST_OUTPUT]);
