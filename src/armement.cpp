@@ -19,6 +19,7 @@ static void arm_UAlim_1A (void)
 
 	temp = analogReadMilliVolts(U_TEST_1A_ADC);
 	
+	
 	digitalWrite(LOAD_TEST_1A, LOW);
 	
 	DecToStr(temp, result);
