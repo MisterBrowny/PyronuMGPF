@@ -17,7 +17,7 @@ static void arm_UAlim_1A (void)
 
 	delay(10);
 
-	temp = analogRead(U_TEST_1A_ADC);
+	temp = analogReadMilliVolts(U_TEST_1A_ADC);
 	
 	digitalWrite(LOAD_TEST_1A, LOW);
 	
@@ -25,23 +25,23 @@ static void arm_UAlim_1A (void)
 
 	SERIAL_DEBUG(result);
 
-	Arm.U_Alim_1A = (float) temp * CONVERSION_ADC;
-	Arm.U_Alim_1A = Arm.U_Alim_1A * PONT_DIVISEUR;
-	Arm.U_Alim_1A = Arm.U_Alim_1A * 100.0f;
+	//Arm.U_Alim_1A = (float) temp * CONVERSION_ADC;
+	Arm.U_Alim_1A = temp * PONT_DIVISEUR;
+	//Arm.U_Alim_1A = Arm.U_Alim_1A * 100.0f;
 
 	// TODO vérifier la conversion
 	// Digital value read 206 = 7.26V
 	
 	itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);
 
-	if (Arm.U_Alim_1A < 1000.0f)
+	if (Arm.U_Alim_1A < 10000.0f)
 	{
 		Ecran.Digit[0] = ' ';
 		Ecran.Digit[1] = temp_tab[0];
 		Ecran.Digit[2] = '.';
 		Ecran.Digit[3] = temp_tab[1];
 		Ecran.Digit[4] = temp_tab[2];
-		Ecran.Digit[5] = 0;
+		Ecran.Digit[5] = temp_tab[3];
 		Ecran.Digit[6] = 0;
 	}
 	else

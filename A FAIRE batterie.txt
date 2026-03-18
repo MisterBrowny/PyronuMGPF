@@ -1,0 +1,8 @@
+lire diviseur de tension
+
+envoyer l'état en MODBUS
+
+200 220
+
+Prévoir l'adresse dans (Hardware.h)
+

@@ -59,9 +59,9 @@
 // #define DefValInflaOK	    94			    // 3.3 x (48 / (48 + 120))
 //                                             // Correspond d'après mesure à 48ohms
 
-#define DefValInflaMOYEN	1000			 // en mV => Correspond d'après mesure à 48ohms // TODO mettre la bonne valeur et la valeur ohmique
+#define DefValInflaMOYEN	1906			 // en mV => Correspond d'après mesure à 33ohms
 
-#define DefValInflaNOK	    1820			 // en mV => Correspond d'après mesure à Xohms // TODO mettre la valeur ohmique
+#define DefValInflaNOK	    1945			 // en mV => Correspond d'après mesure à 47ohms // TODO mettre la valeur ohmique
 
 // En dessous OK 
 // 36 ohm pour 20mA = 0.72 Volts > acceptable => clignote

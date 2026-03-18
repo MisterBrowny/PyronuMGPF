@@ -1,6 +1,6 @@
 #include "includes.h"
 
-#define PRINT_TEST_OUTPUT	1
+#define PRINT_TEST_OUTPUT	0
 #define TEST_FCT_ANALOG		0
 
 struTest Test;
@@ -177,7 +177,7 @@ void check_UAlim (void)
 		Ecran.Digit[2] = '.';
 		Ecran.Digit[3] = temp_tab[1];
 		Ecran.Digit[4] = temp_tab[2];
-		Ecran.Digit[5] = 0;
+		Ecran.Digit[5] = temp_tab[3];
 		Ecran.Digit[6] = 0;
 	}
 	else

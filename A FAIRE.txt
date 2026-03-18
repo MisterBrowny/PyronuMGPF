@@ -17,13 +17,20 @@ déroule par rapport au programme on teste les sorties les unes apres les autres
 O / M / K / O / M / A
 X / O / M / K / M / A
 
-11/ // TODO faut-il tester COM_TIR ou NB_TIR ? Lors du test alim 1A au début de l'arment process
-Y a-t-il un risque à écrire si digitalWrite(LOAD_TEST_1A, HIGH);
 
 13/ pouvoir tirer plus vite 
 register_one_tir_on
 
-quel est la limite 10ms ?
+quel est la limite 10ms ? 10ms
+
+- intensité de non fonctionnement : 0.20 A (c'est l'intensité sous laquelle l'infla ne claque pas lorsqu'il est soumis durant 10 secondes à cette intensité)
+- intensité de fonctionnement : 0,60 A, c'est intensité sous laquelle 100 % des inflas partent en moins de 3 ms (!!!)
+- Intensité préconisée : 1 A
+- Intensité de test : < 10 mA
+
+A noter que l'infla part en 2 ms à 1 A et en 1 ms à 2 A.
+
+
 
 14/ Retour RS485
 Resultat de test boitier : 
@@ -47,7 +54,6 @@ CFG=Numboitier [1-20] =>
 SEQ=[Sequence actuelle]
 
 16/ Chargement par bus 
-
 
 23/ pourquoi la lecture config ne marche pas ? modif modbus en cause ?
 
