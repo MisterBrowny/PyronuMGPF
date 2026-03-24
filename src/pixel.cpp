@@ -22,6 +22,11 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
 
+#define  PIXEL_DEFAULT_R	0
+#define  PIXEL_DEFAULT_G	0
+#define  PIXEL_DEFAULT_B	0
+
+
 void pixel_init (void)
 {
 	SERIAL_DEBUG("Pixel config begins");
@@ -39,11 +44,11 @@ void pixel_init (void)
 void pixel_set_default (void)
 {
 	// pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    pixels.setPixelColor(0, pixels.Color(0, 0, 200));
-	pixels.setPixelColor(1, pixels.Color(0, 0, 200));
-	pixels.setPixelColor(2, pixels.Color(0, 255, 0));
-	pixels.setPixelColor(3, pixels.Color(0, 255, 0));
-	pixels.setPixelColor(4, pixels.Color(0, 0, 200));
+    pixels.setPixelColor(0, pixels.Color(PIXEL_DEFAULT_R, PIXEL_DEFAULT_G, PIXEL_DEFAULT_B));
+	pixels.setPixelColor(1, pixels.Color(PIXEL_DEFAULT_R, PIXEL_DEFAULT_G, PIXEL_DEFAULT_B));
+	pixels.setPixelColor(2, pixels.Color(PIXEL_DEFAULT_R, PIXEL_DEFAULT_G, PIXEL_DEFAULT_B));
+	pixels.setPixelColor(3, pixels.Color(PIXEL_DEFAULT_R, PIXEL_DEFAULT_G, PIXEL_DEFAULT_B));
+	pixels.setPixelColor(4, pixels.Color(PIXEL_DEFAULT_R, PIXEL_DEFAULT_G, PIXEL_DEFAULT_B));
     pixels.show();   // Send the updated pixel colors to the hardware.
 }
 

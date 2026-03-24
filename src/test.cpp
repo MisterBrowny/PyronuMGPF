@@ -1,6 +1,6 @@
 #include "includes.h"
 
-#define PRINT_TEST_OUTPUT	0
+#define PRINT_TEST_OUTPUT	1
 #define TEST_FCT_ANALOG		0
 
 struTest Test;
@@ -214,13 +214,6 @@ uint32_t check_UInfla (void)
 
 void test_update_analog (uint8_t number, uint8_t state)
 {
-// 	if (number > 8)
-// 	{
-// 		analog[0]
-// 		char string[128];
-//   sprintf(string, "%ld %ld %02X %02X %04X %04X %s", transactionCounter, errorCounter, unitId, functionCode, startingAddress, quantity, errorStrings[error]);
-//   Serial.print(string);
-// 	}
 	#if DEBUG_PRINT
 		char string[100];
 		sprintf(string, "output number = %d, state = %02x", number, state);
@@ -298,17 +291,20 @@ byte test_process (void)
 				temp = check_UInfla();
 				
 				#if TEST_FCT_ANALOG
-					if ((Cf.Data[Test.Cpt*3] % 4) == 0)
-					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_MOYEN);
-						Test.Step = TEST_INFLA_OK;
-					}
-					else if ((Cf.Data[Test.Cpt*3] % 3) == 0)
+					if (	(Cf.Data[Test.Cpt*3] == 1) || (Cf.Data[Test.Cpt*3] == 4)
+						||	(Cf.Data[Test.Cpt*3] == 9) || (Cf.Data[Test.Cpt*3] == 12))
 					{
 						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_OK);
+						Test.Step = TEST_INFLA_OK;
+					}
+					else if (	(Cf.Data[Test.Cpt*3] == 2) || (Cf.Data[Test.Cpt*3] == 3)
+							 ||	(Cf.Data[Test.Cpt*3] == 10) || (Cf.Data[Test.Cpt*3] == 13))
+					{
+						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_MOYEN);
 						Test.Step = TEST_INFLA_NOK;
 					}
-					else if ((Cf.Data[Test.Cpt*3] % 2) == 0)
+					else if (	(Cf.Data[Test.Cpt*3] == 5) || (Cf.Data[Test.Cpt*3] == 8)
+							 ||	(Cf.Data[Test.Cpt*3] == 14) || (Cf.Data[Test.Cpt*3] == 15))
 					{
 						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_KO);
 						Test.Step = TEST_INFLA_NOK;
@@ -369,7 +365,7 @@ byte test_process (void)
         case TEST_NO_INFLA_PAUSE:
 			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
-				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
+				if (++Test.Cpt > (NB_TIR + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
 				check_comutest(LOW);
 				Test.Time = millis();
@@ -381,7 +377,7 @@ byte test_process (void)
 				if (TempsSup(Test.Time, TDef3sec))
 			#endif
 			{
-				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
+				if (++Test.Cpt > (NB_TIR + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;} // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
 				check_comutest(LOW);
 				Test.Time = millis();
@@ -392,7 +388,7 @@ byte test_process (void)
 				if (TempsSup(Test.Time, TDef3sec))
 			#endif
 			{
-				if (++Test.Cpt > (NB_RELAY + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;}   // MOD_V0010
+				if (++Test.Cpt > (NB_TIR + NB_PAUSE_MAX - 1))	{Test.Step = TEST_FIN_INFLA;}   // MOD_V0010
 				else                                            {Test.Step = TEST_INFLA;}
 				check_comutest(LOW);
 				Test.Time = millis();
@@ -466,7 +462,7 @@ byte test_process (void)
 		case TEST_INFLA_OK_P0:
 			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
-				if (++Test.Cpt > (NB_RELAY - 1))	{Test.Step = TEST_FIN_INFLA_P0;}    // MOD_V0010
+				if (++Test.Cpt > (NB_TIR - 1))	{Test.Step = TEST_FIN_INFLA_P0;}    // MOD_V0010
 				else								{Test.Step = TEST_INFLA_P0;}
 				check_comutest(LOW);
 				Test.Time = millis();
@@ -475,7 +471,7 @@ byte test_process (void)
 		case TEST_INFLA_NOK_P0:
 			/*if (TempsSup(Test.Time, TDef20ms))*/
 			{
-				if (++Test.Cpt > (NB_RELAY - 1))	{Test.Step = TEST_FIN_INFLA_P0;}    // MOD_V0010
+				if (++Test.Cpt > (NB_TIR - 1))	{Test.Step = TEST_FIN_INFLA_P0;}    // MOD_V0010
 				else                                {Test.Step = TEST_INFLA_P0;}
 				check_comutest(LOW);
 				Test.Time = millis();
@@ -515,8 +511,13 @@ byte test_process (void)
 			if (	(Bouton[Bp_IdTest].State == 0)
 				/*||	(TempsSup(Test.Time, TDef10sec))*/)
 			{
+				register_raz();
 				Test.Step = TEST_WAIT_4;
 				ecran_wait();
+			}
+			else
+			{
+				register_print_test_status();
 			}
 			break;
 		case TEST_WAIT_4:

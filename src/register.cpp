@@ -63,6 +63,56 @@ void register_raz (void)
 	sr.setAllLow(); // set all pins LOW
 }
 
+
+void register_print_test_status (void)
+{
+	uint8_t i;
+
+	if (TempsSup(Test.Led_process_time, TDef50ms))
+	{
+		Test.Led_process_time = millis();
+		if (++ Test.Led_process_cnt > TEST_LED_CNT_MAX)
+		{
+			Test.Led_process_cnt = 0;
+		}
+
+		for (i = 0; i < NB_TIR; i ++)
+		{
+			if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
+			{        
+				sr.setNoUpdate(Led[i], HIGH);
+			}
+			else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
+			{
+				if (Test.Led_process_cnt < TEST_LED_MOYEN_BLINK)
+				{
+					sr.setNoUpdate(Led[i], HIGH);
+				}
+				else
+				{
+					sr.setNoUpdate(Led[i], LOW);
+				}
+			}
+			else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
+			{
+				if (Test.Led_process_cnt == TEST_LED_KO_FLASH)
+				{
+					sr.setNoUpdate(Led[i], HIGH);
+				}
+				else
+				{
+					sr.setNoUpdate(Led[i], LOW);
+				}
+			}
+			else
+			{
+				sr.setNoUpdate(Led[i], LOW);
+			}
+		}
+		sr.updateRegisters();
+	}    
+}
+
 // void loop() {
 
 //   // setting all pins at the same time to either HIGH or LOW

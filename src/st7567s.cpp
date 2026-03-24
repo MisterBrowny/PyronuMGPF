@@ -128,33 +128,33 @@ void st7567s_refresh (void)
     display.clear(st7567sfGK::colorblack);
     display.setFont(&Picopixel);
 
-    display.println("Test results:");
-    for (i = 0; i < 16; i ++)
+    display.println("Test  results:");
+    for (i = 0; i < NB_TIR; i ++)
     {
       if ((i + 1) < 10)
       {
-        sprintf(string_test, "Tir %2 d : ", i + 1);
+        sprintf(string_test, "  Tir     %2 d:   ", i + 1);
       }
       else
       {
-        sprintf(string_test, "Tir %2 d: ", i + 1);
+        sprintf(string_test, "  Tir %2 d:   ", i + 1);
       }
       display.print(string_test);
       if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
       {        
-        sprintf(string_test, "OK          ");
+        sprintf(string_test, "OK                        ");
       }
       else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
       {
-        sprintf(string_test, "MOYEN  ");
+        sprintf(string_test, "MOYEN         ");
       }
       else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
       {
-        sprintf(string_test, "KO          ");
+        sprintf(string_test, "->  !  KO  !       ");
       }
       else
       {
-        sprintf(string_test, "ABSENT ");
+        sprintf(string_test, "  -                          ");
       }
       #if DEBUG_PRINT
         sprintf(string, "index = %d, shift = %d, result = 0x%04X", ((i < 8) ? 0 : 1), ((i < 8) ? i : i - 8)*2, (modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2));
@@ -169,7 +169,7 @@ void st7567s_refresh (void)
       }
       else
       {
-        display.print("|");
+        display.print("|    ");
       }
     }    
     

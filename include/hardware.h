@@ -32,6 +32,7 @@
 // SORTIES
 #define LED_RGB             13  // GPIO13   / pin34     / NumPin WS2812B
 #define LED_BPTEST          15  // GPIO15   / pin4      / NumPin led BP_TEST
+#define LED_BPON            2   // GPIO2    / pin5      / NumPin led BP_ON
 #define TXS0108_OE          23  // GPIO23   / pin18     / NumPin l'Output Enable de buffer 5V/3.3V TXS0108
 #define SECU_PUISSANCE      25  // GPIO25   / pin28     / NumPin la puissance pour le tir (ancien TIR/VERROU_TIR)
 #define LOAD_TEST_1A        32  // GPIO32   / pin26     / NumPin le test 1A

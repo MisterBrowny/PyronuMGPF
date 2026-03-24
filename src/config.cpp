@@ -8,7 +8,7 @@ static bool cf_checksum (void)
 	dword calcul;
 	byte i, valid = false;
 	
-	for (i = 0, calcul = 0; i < (NB_RELAY + NB_PAUSE_MAX); i ++)    // MOD_V0010
+	for (i = 0, calcul = 0; i < (NB_TIR + NB_PAUSE_MAX); i ++)    // MOD_V0010
 	{
 		calcul += (dword) ((word) (Cf.Data[i*CF_SECTOR_SIZE+1] << 8) + Cf.Data[i*CF_SECTOR_SIZE+2]);
 	}
@@ -42,7 +42,7 @@ static bool cf_checkout (void)
 	byte i, valid = false;
 	byte last_out = 0;
 
-	for (i = 0; i < (NB_RELAY + NB_PAUSE_MAX); i ++)    // MOD_V0010
+	for (i = 0; i < (NB_TIR + NB_PAUSE_MAX); i ++)    // MOD_V0010
 	{
 		if (Cf.Data[i*CF_SECTOR_SIZE] == 0) 
 		{
@@ -73,15 +73,15 @@ static bool cf_checkout (void)
 	return valid;
 }
 
-// on verifie qu'il n'y a pas d'appel de relais > à NB_RELAY
+// on verifie qu'il n'y a pas d'appel de relais > à NB_TIR
 // MOD_V0010 : on permet la valeur PAUSE_VALUE pour la pause
 static bool cf_checkrange (void)
 {
 	byte i, valid = false;
 
-	for (i = 0; i < (NB_RELAY + NB_PAUSE_MAX); i ++)    // MOD_V0010
+	for (i = 0; i < (NB_TIR + NB_PAUSE_MAX); i ++)    // MOD_V0010
 	{
-		if (    (Cf.Data[i*CF_SECTOR_SIZE] > NB_RELAY)
+		if (    (Cf.Data[i*CF_SECTOR_SIZE] > NB_TIR)
             &&  (Cf.Data[i*CF_SECTOR_SIZE] != PAUSE_VALUE)) // MOD_V0010
         {
 			SERIAL_DEBUG("cf_checkrange NOK");

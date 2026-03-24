@@ -33,10 +33,18 @@
 
 #define TEST_PRINT_RESULT		0x40
 
+// Led Print Test Status
+#define TEST_LED_TIMING			TDef50ms
+#define TEST_LED_CNT_MAX		20
+#define TEST_LED_KO_FLASH		20
+#define TEST_LED_MOYEN_BLINK	10
+
 typedef struct	StructTest{
 	uint8_t			Step;
 	uint8_t			Cpt;
+	uint8_t			Led_process_cnt;
 	unsigned long	Time;
+	unsigned long	Led_process_time;
 	float			U_Alim;
 	float			U_Infla;
 	bool			print_result;

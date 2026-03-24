@@ -11,14 +11,14 @@ static byte feu_check_pause (void)
 
 static byte feu_check_end_P0 (void)
 {
-	if ((Feu.Cpt >= NB_RELAY) || (Feu.NextOutput == 0))	{return true;}  
+	if ((Feu.Cpt >= NB_TIR) || (Feu.NextOutput == 0))	{return true;}  
 	else                                                {return false;}
 }
 // fin MOD_V0010
 
 static byte feu_check_end (void)
 {
-	if ((Feu.Cpt >= (NB_RELAY + NB_PAUSE_MAX)) || (Feu.NextOutput == 0))	{return true;}  // MOD_V0010
+	if ((Feu.Cpt >= (NB_TIR + NB_PAUSE_MAX)) || (Feu.NextOutput == 0))	{return true;}  // MOD_V0010
 	else                                                                    {return false;}
 }
 

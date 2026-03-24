@@ -1,27 +1,9 @@
 TODO
 
-
-7/ On teste ligne après de manière auto puis
-déroule par rapport au programme on teste les sorties les unes apres les autres
-
-=> a chaque résultat OK la led s'allume
-=> a chaque résultat Moyen la led clignote
-=> a chaque résultat NOK la led flash rapidement
-=> si le tir est Hors config alors la led reste éteinte
-
-=> A FAIRE GESTION LED
-
-
-=> les résultats sont stockés dans un tableau puis à la fin => OK
-=> affiché sur lécran dans le mesure du possible => OK
-O / M / K / O / M / A
-X / O / M / K / M / A
-
-
-13/ pouvoir tirer plus vite 
+ 13/ pouvoir tirer plus vite 
 register_one_tir_on
 
-quel est la limite 10ms ? 10ms
+quel est la limite 10ms ? 10ms pour l'instant attente confirmation Celine
 
 - intensité de non fonctionnement : 0.20 A (c'est l'intensité sous laquelle l'infla ne claque pas lorsqu'il est soumis durant 10 secondes à cette intensité)
 - intensité de fonctionnement : 0,60 A, c'est intensité sous laquelle 100 % des inflas partent en moins de 3 ms (!!!)
@@ -29,8 +11,6 @@ quel est la limite 10ms ? 10ms
 - Intensité de test : < 10 mA
 
 A noter que l'infla part en 2 ms à 1 A et en 1 ms à 2 A.
-
-
 
 14/ Retour RS485
 Resultat de test boitier : 
@@ -53,6 +33,11 @@ CFG=Numboitier [1-20] =>
   21/ Definir un SNXXXX pour chaque pyro / attribuer un n° de slave
 SEQ=[Sequence actuelle]
 
+  => Finalement non
+  => ID SLAVE à afficher au démarrage
+  => à modifier dans Hardware.h
+  
+
 16/ Chargement par bus 
 
 23/ pourquoi la lecture config ne marche pas ? modif modbus en cause ?
@@ -67,6 +52,14 @@ SEQ=[Sequence actuelle]
 Quelles sont les idées pour piloter les led ?
 Pilotage en fonction des Etat Pyronum ?
 
+Test chenillar vert
+
+Tir chenillard rouge
+pause rouge END
+End bleu fixe
+Armed chenillard rouge
+
+
 24/ supervisor QR CODE pour appli sur tel
 
 25/ supervisor faire en sorte que ce soit une fenetre standard appli et pas une page web
@@ -78,4 +71,34 @@ bouton S
 PAS URGENT
 
 
-12/ revoir les messages affichés sur écran prévoir OLD_STYLE précompile
+26/ revoir les messages affichés sur écran prévoir OLD_STYLE précompile
+
+27/ affiches sur supervisor UALIM et UALIM à 1
+
+28/ pilotage bouton test / BP_ON  GPIO2 / PIN en fonction de ce qu'on doit appuyer et du commutatteur ON puissance
+
+29/ afficher l'ID boitier au démarrage
+
+30/ =>  COM_ ON ! commutateur puissance actif
+
+31/ Checker PROG_0
+
+32/ Changement process démarrage 
+--------------------------------------------
+1/ affiché sur le même écran
+    1.1/ version
+    1.2/ ID Slave MODBUS
+    1.3/ SEQ = Config
+2/ Si COMMU_ON affiché commutateur puissance actif
+Sinon  Lancer le test afficher l'état UALIM et l'état UALIM 1A sur l'écran de test results
+
+3/ On rappuis sur BP_test (anneau led BP_test allumé et BP_ON éteint) => affichage ecran wait
+
+4/ On pilote les led en fct de commu puissance 
+clignote celui qui est pas sélectionné
+
+5/ sur l'écran wait on a le choix de partir sur ARMED ou TEST en fonction COMMU_ON
+
+6/ Si on part COMU_ON on arme en appuyant lontempgs >3 secondes sur BP_ON
+et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le bouton ARMER pour armer le PyronuMGPF"
+---------------------------------------------
