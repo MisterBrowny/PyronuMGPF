@@ -18,6 +18,7 @@ typedef struct	StructArm{
 
 extern struArm Arm;
 
+void arm_UAlim_1A (bool print);
 void armement_process (void);
 
 #endif	/* ARMEMENT_H */

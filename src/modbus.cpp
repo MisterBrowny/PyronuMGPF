@@ -10,7 +10,7 @@
 #include "ModbusRTUSlave.h"
 
 // ================== CONFIGURATION (à changer par ESP32) ==================
-#define SLAVE_ID          1          // ← CHANGE CE NUMÉRO pour chaque ESP32 (1 à 20)
+
 
 #define RS485_RX_PIN      16         // GPIO16 → RO du MAX485
 #define RS485_TX_PIN      17         // GPIO17 → DI du MAX485
@@ -72,6 +72,7 @@ void modbus_init (void)
 //   for (int i = 0; i < CONFIG_NUM_REGS; i++) {
 //     modbus.holdingRegisterWrite(CONFIG_START_REG + i, configRegs[i]);
 //   }
+    display.println("(id=" + String(SLAVE_ID) + ")");
 
     Serial.println("Modbus Slave ready !");
 }

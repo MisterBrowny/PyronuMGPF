@@ -18,7 +18,12 @@ import sys
 import multiprocessing
 import os
 import threading
+import socket
 
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
+
+url = f"http://{ip}:8080"
 
 if sys.stdout is None:
     sys.stdout = open("nul", "w")
@@ -272,6 +277,8 @@ async def main_page():
     asset_path = resource_path('asset')
 
     app.add_static_files('/asset', asset_path)
+    
+    #i.query('body').classes('max-w-screen-md md:max-w-screen-lg xl:max-w-screen-2xl mx-auto')
 
     ui.add_head_html('<link rel="icon" href="/asset/icon.ico">')
 
@@ -302,6 +309,7 @@ async def main_page():
 
         ui.checkbox(f'Active refresh', value=True).classes('mt-12 text-1xl font-semibold').on_value_change(lambda e: toggle_all_slave(e))
 
+    
     # ==================== Création des onglets ====================
     with ui.tabs().classes('w-full text-3xl') as tabs:
         tab_list = []
@@ -309,7 +317,7 @@ async def main_page():
             sid = SLAVE_IDS[dev - 1]
             tab_list.append(ui.tab(f'PYRO {sid:02d}'))
 
-    with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full shadow-lg rounded-xl'):
+    with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full mx-auto shadow-lg rounded-xl px-4'):
         global_labels = {}
         analog_labels = {}
         last_request = {}
@@ -445,7 +453,8 @@ async def main_page():
                             .props('outline push').classes('flex-grow')
 
     ui.separator()
-    global_status = ui.label('Auto-refresh toutes les 5 s').classes('text-center mt-4 mb-2')
+    ui.label("Accès smartphone :")
+    ui.label(url).classes("text-blue-600")
     
     async def refresh_ui():
 
@@ -492,7 +501,7 @@ async def main_page():
             
             
         
-        global_status.text = f'Refresh GUI state : {now_str}'
+        #global_status.text = f'Refresh GUI state : {now_str}'
     
     ui.timer(0.5, refresh_ui)
 
@@ -518,7 +527,7 @@ def main():
         dark=True,
         reload=False,
         show=True,
-        access_log=False,
+        access_log=False
     )
 
 #if __name__ in {"__main__", "__mp_main__"}:

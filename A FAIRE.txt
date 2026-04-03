@@ -85,12 +85,12 @@ PAS URGENT
 
 32/ Changement process démarrage 
 --------------------------------------------
-1/ affiché sur le même écran
-    1.1/ version
-    1.2/ ID Slave MODBUS
-    1.3/ SEQ = Config
-2/ Si COMMU_ON affiché commutateur puissance actif
-Sinon  Lancer le test afficher l'état UALIM et l'état UALIM 1A sur l'écran de test results
+1/ affiché sur le même écran => OK
+    1.1/ version => OK
+    1.2/ ID Slave MODBUS => OK
+    1.3/ SEQ = Config => OK
+2/ Si COMMU_ON affiché commut ateur puissance actif => OK
+Sinon  Lancer le test afficher l'état UALIM et l'état UALIM 1A sur l'écran de test results => OK
 
 3/ On rappuis sur BP_test (anneau led BP_test allumé et BP_ON éteint) => affichage ecran wait
 
@@ -99,6 +99,8 @@ clignote celui qui est pas sélectionné
 
 5/ sur l'écran wait on a le choix de partir sur ARMED ou TEST en fonction COMMU_ON
 
-6/ Si on part COMU_ON on arme en appuyant lontempgs >3 secondes sur BP_ON
+6/ Si on part COMU_ON on arme en appuyant lontempgs >3 secondes sur BP_ON => OK
 et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le bouton ARMER pour armer le PyronuMGPF"
+
+/!\ le test à 1A doit être décalé de 20ms selon l'ID slave modbus du boitier pour éviter qu'il le fassent tous en meme temps !
 ---------------------------------------------

@@ -106,9 +106,9 @@ void st7567s_init (void)
 	display.textflow(st7567sfGK::toptobottom);
 	display.clear(st7567sfGK::colorblack);
   display.println("PyronuMGPF");
-  display.println(Version);
-
-  delay(1000);
+  display.print(Version);
+  display.print(" ");
+  //delay(1000);
 
   SERIAL_DEBUG("ST7567s init ends");
 }
@@ -128,7 +128,9 @@ void st7567s_refresh (void)
     display.clear(st7567sfGK::colorblack);
     display.setFont(&Picopixel);
 
-    display.println("Test  results:");
+    sprintf(string_test, "UAlim=%dmV | UAlim(1A)=%dmV", (int) Test.U_Alim, (int) Arm.U_Alim_1A);
+    
+    display.println(string_test);
     for (i = 0; i < NB_TIR; i ++)
     {
       if ((i + 1) < 10)

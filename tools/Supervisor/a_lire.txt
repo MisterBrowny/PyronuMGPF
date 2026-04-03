@@ -4,6 +4,7 @@ python -m pip install nicegui
 python -m pip install pymodbus
 
 pyinstaller --onedir --noconsole --icon=icon.ico --noconfirm --collect-all nicegui --collect-all pymodbus --hidden-import serial --add-data "asset;asset" --collect-data nicegui --exclude-module notebook --exclude-module pandas --exclude-module scipy --exclude-module matplotlib supervisor.py
+pyinstaller --onefile --noconsole --icon=icon.ico --noconfirm --collect-all nicegui --collect-all pymodbus --hidden-import serial --add-data "asset;asset" --collect-data nicegui --exclude-module notebook --exclude-module pandas --exclude-module scipy --exclude-module matplotlib supervisor.py
 
 --exclude-module matplotlib ^
 --exclude-module scipy ^

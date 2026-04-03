@@ -75,3 +75,6 @@ O / M / K / O / M / A
 X / O / M / K / M / A
 
 => Alignés les 1 avec les autres chiffres => FAIT
+
+
+33/ Réparer le mode 0 seule la première voie est testée => OK réparé

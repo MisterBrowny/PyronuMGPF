@@ -33,6 +33,8 @@
 
 #define TEST_PRINT_RESULT		0x40
 
+#define TEST_ALIM_1_A			0x50
+
 // Led Print Test Status
 #define TEST_LED_TIMING			TDef50ms
 #define TEST_LED_CNT_MAX		20

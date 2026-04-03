@@ -7,17 +7,22 @@ void micro_wait (void)
 	switch (Micro.Step)
 	{
 		case MICRO_STEP_1:
-			if (Bouton[Bp_IdTest].State == 0)
+			if (	(Bouton[Bp_IdTest].State == 0)
+				||	(TempsSup(Micro.Time, TDef5sec)))
 			{
 				Micro.Step = MICRO_STEP_2;
-				ecran_wait();
+				
+  				// Vérifie état COMU_TEST
+				check_comutest(LOW);
 			}
 			break;
 		case MICRO_STEP_2:
-			if (Bouton[Bp_IdTest].State == 1)
-			{
-				Micro.Step = MICRO_STEP_3;
-			}
+			Micro.Phase = MICRO_TEST;
+			Test.Step = TEST_WAIT;
+			check_comutest(LOW);
+			check_bpon();
+		
+			//ecran_blank();
 			break;
 		case MICRO_STEP_3:
 			if (Bouton[Bp_IdTest].State == 0)

@@ -127,23 +127,22 @@ void cf_check_and_display (void)
 
 	if (configOk == true)
 	{
+		char string_test[100];
+
 		SERIAL_DEBUG("CONFIG OK");
 
 		// affichage du checksum
-		Ecran.Digit[0] = HexToAscii(MSB_BYTE(Cf.Data[OFFSET_CHECKSUM_2]));
-		Ecran.Digit[1] = HexToAscii(LSB_BYTE(Cf.Data[OFFSET_CHECKSUM_2]));
-		Ecran.Digit[2] = HexToAscii(MSB_BYTE(Cf.Data[OFFSET_CHECKSUM_3]));
-		Ecran.Digit[3] = HexToAscii(LSB_BYTE(Cf.Data[OFFSET_CHECKSUM_3]));
-		Ecran.Digit[4] = HexToAscii(MSB_BYTE(Cf.Data[OFFSET_CHECKSUM_4]));
-		Ecran.Digit[5] = HexToAscii(LSB_BYTE(Cf.Data[OFFSET_CHECKSUM_4]));
-		Ecran.Digit[6] = 0;
-		st7567s_refresh();
+		sprintf(string_test, "Seq=%02X%02X%02X", Cf.Data[OFFSET_CHECKSUM_2], Cf.Data[OFFSET_CHECKSUM_3], Cf.Data[OFFSET_CHECKSUM_4]);
+
+		display.println(string_test);
+		SERIAL_DEBUG(string_test);
 	}
 	else
 	{
 		SERIAL_DEBUG("CONFIG NOT OK");	
-		ecran_erreur_conf();
-		st7567s_refresh();
+		// ecran_erreur_conf();
+		// st7567s_refresh();
+		display.println("SEQ=Error Config");
 		while (true);
 	}
 }

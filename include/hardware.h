@@ -1,6 +1,10 @@
 #ifndef HARDWARE_H
 #define	HARDWARE_H
 
+// /!\ SLAVE_ID est à modifier par ESP32 dans PyronuMGPF.cpp 
+
+extern const uint8_t SLAVE_ID;
+
 #define TXS0108_OE_PRESENT 1
 
 // ENTREES 

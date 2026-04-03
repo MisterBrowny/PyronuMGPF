@@ -1,7 +1,7 @@
 #include "includes.h"
 
-#define PRINT_TEST_OUTPUT	1
-#define TEST_FCT_ANALOG		0
+#define PRINT_TEST_OUTPUT	0
+#define TEST_FCT_ANALOG		1
 
 struTest Test;
 
@@ -117,7 +117,7 @@ byte check_program_0 (void)
 		
 		ret = true;
 
-		Micro.Step = MICRO_STEP_3;
+		Micro.Step = MICRO_STEP_2;
 
 		ecran_wait();
 	}
@@ -149,7 +149,7 @@ void check_bpon (void)
 		ecran_bp_on ();
 		st7567s_refresh();
 	
-		while((BP_ON == 0) && (TempsInf(Test.Time, TDef1sec)));
+		while(BP_ON == 0);
 	}
 
 }
@@ -158,38 +158,40 @@ void check_UAlim (void)
 {
 	uint32_t 	temp = 0;
 	char 		temp_tab[5] = {0};
+	char 		string_test[25];
 
 	temp = analogReadMilliVolts(U_TEST_1A_ADC);
 
 	//Test.U_Alim = (float) temp * CONVERSION_ADC;
 	Test.U_Alim = temp * PONT_DIVISEUR;
 
-	SERIAL_DEBUG(Test.U_Alim);
+	sprintf(string_test, "U ALIM =%d", Test.U_Alim);
+	SERIAL_DEBUG(string_test);
 
 	//Test.U_Alim = Test.U_Alim * 100.0f;
 
-	itoa((int) Test.U_Alim, &temp_tab[0], 10);
+	// itoa((int) Test.U_Alim, &temp_tab[0], 10);
 
-	if (Test.U_Alim < 10000.0f)
-	{
-		Ecran.Digit[0] = ' ';
-		Ecran.Digit[1] = temp_tab[0];
-		Ecran.Digit[2] = '.';
-		Ecran.Digit[3] = temp_tab[1];
-		Ecran.Digit[4] = temp_tab[2];
-		Ecran.Digit[5] = temp_tab[3];
-		Ecran.Digit[6] = 0;
-	}
-	else
-	{
-		Ecran.Digit[0] = temp_tab[0];
-		Ecran.Digit[1] = temp_tab[1];
-		Ecran.Digit[2] = '.';
-		Ecran.Digit[3] = temp_tab[2];
-		Ecran.Digit[4] = temp_tab[3];
-		Ecran.Digit[5] = 0;
-		Ecran.Digit[6] = 0;
-	}
+	// if (Test.U_Alim < 10000.0f)
+	// {
+	// 	Ecran.Digit[0] = ' ';
+	// 	Ecran.Digit[1] = temp_tab[0];
+	// 	Ecran.Digit[2] = '.';
+	// 	Ecran.Digit[3] = temp_tab[1];
+	// 	Ecran.Digit[4] = temp_tab[2];
+	// 	Ecran.Digit[5] = temp_tab[3];
+	// 	Ecran.Digit[6] = 0;
+	// }
+	// else
+	// {
+	// 	Ecran.Digit[0] = temp_tab[0];
+	// 	Ecran.Digit[1] = temp_tab[1];
+	// 	Ecran.Digit[2] = '.';
+	// 	Ecran.Digit[3] = temp_tab[2];
+	// 	Ecran.Digit[4] = temp_tab[3];
+	// 	Ecran.Digit[5] = 0;
+	// 	Ecran.Digit[6] = 0;
+	// }
 }
 
 uint32_t check_UInfla (void)
@@ -239,20 +241,32 @@ byte test_process (void)
 			if (Bouton[Bp_IdTest].State == 1)
 			{
 				Test.Step = TEST_ALIM;
+				Test.Time = millis();
 			}
 			break;
 
 		case TEST_ALIM:
 			check_comutest(LOW);
+			
+			if (TempsSup(Test.Time, TDef20ms * (SLAVE_ID - 1)))
+			{
+				Test.Cpt = 0;
 
-			Test.Cpt = 0;
+				check_UAlim();
 
-			check_UAlim();
-
-			Test.Step = TEST_WAIT_2;
+				Test.Step = TEST_ALIM_1_A;
+			}
 			break;
+
+		case TEST_ALIM_1_A:
+			
+				arm_UAlim_1A(false);
+
+				Test.Step = TEST_WAIT_2;
+			break;
+			
 		case TEST_WAIT_2 :
-			if (Bouton[Bp_IdTest].State == 0)
+			//if (Bouton[Bp_IdTest].State == 0)
 			{
 				if (Micro.Mod.P_0 == false)	{Test.Step = TEST_INFLA;}
 				else						{Test.Step = TEST_INFLA_P0;}
@@ -437,17 +451,17 @@ byte test_process (void)
 				if (temp > DefValInflaNOK) 			
 				{
 					test_update_analog((byte) (Test.Cpt + 1), ANALOG_KO);
-					Test.Step = TEST_INFLA_NOK;
+					Test.Step = TEST_INFLA_NOK_P0;
 				}
 				else if (temp > DefValInflaMOYEN) 	
 				{
 					test_update_analog((byte) (Test.Cpt + 1), ANALOG_MOYEN);
-					Test.Step = TEST_INFLA_NOK;
+					Test.Step = TEST_INFLA_NOK_P0;
 				}
 				else
 				{
 					test_update_analog((byte) (Test.Cpt + 1), ANALOG_OK);
-					Test.Step = TEST_INFLA_OK;
+					Test.Step = TEST_INFLA_OK_P0;
 				}
 
 				// Affiche le num de l'infla testé
@@ -524,6 +538,7 @@ byte test_process (void)
 			if (Bouton[Bp_IdTest].State == 1)
 			{
 				Micro.Phase = MICRO_WAIT;
+				Micro.Step = MICRO_STEP_3;
 			}
 			break;
 	}

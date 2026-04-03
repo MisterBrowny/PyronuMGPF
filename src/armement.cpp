@@ -2,11 +2,12 @@
 
 struArm Arm;
 
-static void arm_UAlim_1A (void)
+void arm_UAlim_1A (bool print)
 {
 	int 	temp = 0;
 	char 	temp_tab[5] = {0};
 	char	result[10];
+	char 		string_test[25];
 
 	// On s'assure que la sécu puissance est inactive
 	// SECU_PUISSANCE fait un ET LOGIQUE avec NB_AT
@@ -21,38 +22,44 @@ static void arm_UAlim_1A (void)
 
 	digitalWrite(LOAD_TEST_1A, LOW);
 	
-	DecToStr(temp, result);
+	// DecToStr(temp, result);
 
-	SERIAL_DEBUG(result);
+	// SERIAL_DEBUG(result);
 
 	//Arm.U_Alim_1A = (float) temp * CONVERSION_ADC;
 	Arm.U_Alim_1A = temp * PONT_DIVISEUR;
 	//Arm.U_Alim_1A = Arm.U_Alim_1A * 100.0f;
+	
+	sprintf(string_test, "U ALIM 1A=%d", Arm.U_Alim_1A);
+	SERIAL_DEBUG(string_test);
 
 	// TODO vérifier la conversion
 	// Digital value read 206 = 7.26V
 	
-	itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);
+	if (print == true)
+	{
+		itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);
 
-	if (Arm.U_Alim_1A < 10000.0f)
-	{
-		Ecran.Digit[0] = ' ';
-		Ecran.Digit[1] = temp_tab[0];
-		Ecran.Digit[2] = '.';
-		Ecran.Digit[3] = temp_tab[1];
-		Ecran.Digit[4] = temp_tab[2];
-		Ecran.Digit[5] = temp_tab[3];
-		Ecran.Digit[6] = 0;
-	}
-	else
-	{
-		Ecran.Digit[0] = temp_tab[0];
-		Ecran.Digit[1] = temp_tab[1];
-		Ecran.Digit[2] = '.';
-		Ecran.Digit[3] = temp_tab[2];
-		Ecran.Digit[4] = temp_tab[3];
-		Ecran.Digit[5] = 0;
-		Ecran.Digit[6] = 0;
+		if (Arm.U_Alim_1A < 10000.0f)
+		{
+			Ecran.Digit[0] = ' ';
+			Ecran.Digit[1] = temp_tab[0];
+			Ecran.Digit[2] = '.';
+			Ecran.Digit[3] = temp_tab[1];
+			Ecran.Digit[4] = temp_tab[2];
+			Ecran.Digit[5] = temp_tab[3];
+			Ecran.Digit[6] = 0;
+		}
+		else
+		{
+			Ecran.Digit[0] = temp_tab[0];
+			Ecran.Digit[1] = temp_tab[1];
+			Ecran.Digit[2] = '.';
+			Ecran.Digit[3] = temp_tab[2];
+			Ecran.Digit[4] = temp_tab[3];
+			Ecran.Digit[5] = 0;
+			Ecran.Digit[6] = 0;
+		}
 	}
 }
 
@@ -71,7 +78,7 @@ void armement_process (void)
 		case ARM_ALIM_1A:
 			check_comutest(HIGH);
 
-			arm_UAlim_1A();
+			arm_UAlim_1A(true);
 
 			Arm.Step = ARM_WAIT_1;
 			break;
