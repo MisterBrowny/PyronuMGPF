@@ -77,4 +77,23 @@ X / O / M / K / M / A
 => Alignés les 1 avec les autres chiffres => FAIT
 
 
+24/ supervisor QR CODE pour appli sur tel => pas de QR code mais lancement appli ok
+
+25/ supervisor faire en sorte que ce soit une fenetre standard appli et pas une page web => NON
+
+29/ afficher l'ID boitier au démarrage => FAIT
+
+
+31/ Checker PROG_0 => OK
+
 33/ Réparer le mode 0 seule la première voie est testée => OK réparé
+
+15/ Pour les Adresses MODBUS fixes à noté en config
+CFG=Numboitier [1-20] => 
+  18/ permettre la modification du numéro de slave en mode programmation
+  21/ Definir un SNXXXX pour chaque pyro / attribuer un n° de slave
+SEQ=[Sequence actuelle]
+
+  => Finalement non
+  => ID SLAVE à afficher au démarrage
+  => à modifier dans Hardware.h
