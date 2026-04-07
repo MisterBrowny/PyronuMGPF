@@ -1,16 +1,5 @@
 TODO
 
- 13/ pouvoir tirer plus vite 
-register_one_tir_on
-
-quel est la limite 10ms ? 10ms pour l'instant attente confirmation Celine
-
-- intensité de non fonctionnement : 0.20 A (c'est l'intensité sous laquelle l'infla ne claque pas lorsqu'il est soumis durant 10 secondes à cette intensité)
-- intensité de fonctionnement : 0,60 A, c'est intensité sous laquelle 100 % des inflas partent en moins de 3 ms (!!!)
-- Intensité préconisée : 1 A
-- Intensité de test : < 10 mA
-
-A noter que l'infla part en 2 ms à 1 A et en 1 ms à 2 A.
 
 14/ Retour RS485
 Resultat de test boitier : 
@@ -28,16 +17,11 @@ Etat boitier : ARMED - GO - TEST - END
 
 
 16/ Chargement par bus 
+ => a rendre uniquement possible en mode programmation
+ => s'affrannchir des espace et tirer
 
-23/ pourquoi la lecture config ne marche pas ? modif modbus en cause ?
 
-
-6/ seuls les deux premiers Pixel RGB sont piloté
-  une piste ?
-  si je change la couleur dans la fonction d'init les deux dernière led prenne la couleur précédente et les deux premi_re led prennent la nouvelle
-  les couleurs semblent être latché trop tot
-=> led 3 dead on verra sur les nouvelles cartes => c'est réglé sur les nouvelles cartes
-
+33/ LED RGB
 Quelles sont les idées pour piloter les led ?
 Pilotage en fonction des Etat Pyronum ?
 
@@ -49,12 +33,10 @@ End bleu fixe
 Armed chenillard rouge
 
 
-
 26/ revoir les messages affichés sur écran prévoir OLD_STYLE précompile
 
-27/ affiches sur supervisor UALIM et UALIM à 1
 
-28/ pilotage bouton test / BP_ON  GPIO2 / PIN en fonction de ce qu'on doit appuyer et du commutatteur ON puissance
+28/ pilotage bouton test / BP_ON  GPIO2 / PIN en fonction de ce qu'on doit appuyer et du commutateur ON puissance
 
 
 30/ =>  COM_ ON ! commutateur puissance actif
@@ -80,4 +62,5 @@ clignote celui qui est pas sélectionné
 et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le bouton ARMER pour armer le PyronuMGPF"
 
 /!\ le test à 1A doit être décalé de 20ms selon l'ID slave modbus du boitier pour éviter qu'il le fassent tous en meme temps !
+=> FAIT
 ---------------------------------------------

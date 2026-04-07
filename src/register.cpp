@@ -78,11 +78,11 @@ void register_print_test_status (void)
 
 		for (i = 0; i < NB_TIR; i ++)
 		{
-			if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
+			if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
 			{        
 				sr.setNoUpdate(Led[i], HIGH);
 			}
-			else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
+			else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
 			{
 				if (Test.Led_process_cnt < TEST_LED_MOYEN_BLINK)
 				{
@@ -93,7 +93,7 @@ void register_print_test_status (void)
 					sr.setNoUpdate(Led[i], LOW);
 				}
 			}
-			else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
+			else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
 			{
 				if (Test.Led_process_cnt == TEST_LED_KO_FLASH)
 				{

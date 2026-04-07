@@ -5,12 +5,12 @@ struConfig	Cf;
 // on verifie que le checksum et bien le meme que la valeur en memoire OFFSET_CHECKSUM_1, OFFSET_CHECKSUM_2, OFFSET_CHECKSUM_3 et OFFSET_CHECKSUM_4 (4 octets)
 static bool cf_checksum (void)
 {
-	dword calcul;
+	uint32_t calcul;
 	byte i, valid = false;
 	
 	for (i = 0, calcul = 0; i < (NB_TIR + NB_PAUSE_MAX); i ++)    // MOD_V0010
 	{
-		calcul += (dword) ((word) (Cf.Data[i*CF_SECTOR_SIZE+1] << 8) + Cf.Data[i*CF_SECTOR_SIZE+2]);
+		calcul += (uint32_t) ((uint32_t) (Cf.Data[i*CF_SECTOR_SIZE+1] << 16) + (uint32_t) (Cf.Data[i*CF_SECTOR_SIZE+2] << 8) + Cf.Data[i*CF_SECTOR_SIZE+3]);
 	}
 
 	if (	(((calcul >> 24) & 0x000000FF) == Cf.Data[OFFSET_CHECKSUM_1])   // MOD_V0010
@@ -30,8 +30,6 @@ static bool cf_checksum (void)
 	{// Program_0
 		Micro.Mod.P_00 = true;
 	}
-
-	if (calcul > 0x0000FFFF)	{Cf.IsLong = true;}
 		
 	return valid;
 }
@@ -132,17 +130,16 @@ void cf_check_and_display (void)
 		SERIAL_DEBUG("CONFIG OK");
 
 		// affichage du checksum
-		sprintf(string_test, "Seq=%02X%02X%02X", Cf.Data[OFFSET_CHECKSUM_2], Cf.Data[OFFSET_CHECKSUM_3], Cf.Data[OFFSET_CHECKSUM_4]);
+		sprintf(string_test, "Seq=%02X%02X%02X%02X", Cf.Data[OFFSET_CHECKSUM_1], Cf.Data[OFFSET_CHECKSUM_2], Cf.Data[OFFSET_CHECKSUM_3], Cf.Data[OFFSET_CHECKSUM_4]);
 
 		display.println(string_test);
 		SERIAL_DEBUG(string_test);
+		memcpy(Modbus.state.config, Cf.Data, CF_SIZE);
 	}
 	else
 	{
 		SERIAL_DEBUG("CONFIG NOT OK");	
-		// ecran_erreur_conf();
-		// st7567s_refresh();
-		display.println("SEQ=Error Config");
+		display.println("SEQ=Err Conf");
 		while (true);
 	}
 }
@@ -206,14 +203,6 @@ void cf_rcv (void)
 	}
 	else
 	{
-		// Boucle de code faite dans 
-		// 		Cf.Data[Cf.Index] = RCREG;
-		// 		TXREG = Cf.Data[Cf.Index];
-
-		// 		Cf.Index ++;
-
-		// 		Cf.Time1 = Cptms;
-
 		if (Serial.available()) 
 		{
 			Cf.Data[Cf.Index] = Serial.read();

@@ -47,8 +47,10 @@ NUM_ANALOG_INPUTS = 16
 
 GLOBAL_STATE_REG   = 0       # registre état global (LSB)
 ANALOG_START_REG   = 1       # 2 registres → 32 bits analogiques
-CONFIG_START_REG   = 3       # ← À CHANGER : adresse de départ config
-CONFIG_NUM_REGS    = 8         # ← À CHANGER : combien de registres lire/écrire
+ALIM_START_REG     = 3
+ALIM_1A_START_REG  = 4
+CONFIG_START_REG   = 5       # ← À CHANGER : adresse de départ config
+CONFIG_NUM_REGS    = 55      # ← À CHANGER : combien de registres lire/écrire
 
 SLAVE_IDS = list(range(1, NUM_DEVICES + 1))
 active_slaves = set(SLAVE_IDS)
@@ -72,6 +74,7 @@ ANALOG_MAP = {
 
 DEFAULT_GLOBAL = ("???", "text-3xl text-gray-500 font-bold")
 DEFAULT_ANALOG = ("—", "text-2xl font-bold")
+DEFAULT_ALIM = ("—")
 
 DEFAULT_TIME = ("never", "text-base text-gray-500 mt-0 italic text-center")
 
@@ -84,6 +87,8 @@ device_states = {
     i: {
         "global": DEFAULT_GLOBAL,
         "analogs": [DEFAULT_ANALOG] * NUM_ANALOG_INPUTS,
+        "alim": DEFAULT_ALIM,
+        "alim_1A": DEFAULT_ALIM,
         "no_refresh": True,
         "disconnected": False,
         "last_request": DEFAULT_TIME,
@@ -106,7 +111,7 @@ def read_device(client, sid):
 
         resp = client.read_holding_registers(
             GLOBAL_STATE_REG,
-            count=3,
+            count=5,
             device_id=sid
         )
         
@@ -134,6 +139,8 @@ def read_device(client, sid):
 
         device_states[sid]["global"] = global_state
         device_states[sid]["analogs"] = analogs
+        device_states[sid]["alim"] = regs[3]
+        device_states[sid]["alim_1A"] = regs[4]
         device_states[sid]["no_refresh"] = False
         device_states[sid]["disconnected"] = False
         device_states[sid]["last_response"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
@@ -180,36 +187,148 @@ def modbus_worker():
 
         time.sleep(REFRESH_INTERVAL)
 
+# def modbus_read_config(slave_id: int, num_regs: int):
+#     client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
+#                           parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
+#                           timeout=TIMEOUT)
+#     try:
+#         if not client.connect():
+#             return False, "Connexion impossible"
+
+#         resp = client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
+#         if resp.isError():
+#             return False, str(resp)
+
+#         regs = resp.registers
+#         hex_bytes = []
+#         for val in regs:
+#             hex_bytes.append(f"{(val >> 8) & 0xFF:02X}")
+#             hex_bytes.append(f"{val & 0xFF:02X}")
+
+#         return True, ' '.join(hex_bytes)
+
+#     except Exception as e:
+#         return False, str(e)
+#     finally:
+#         client.close()
+
 def modbus_read_config(slave_id: int, num_regs: int):
-    client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
-                          parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
-                          timeout=TIMEOUT)
-    try:
-        if not client.connect():
-            return False, "Connexion impossible"
+    global modbus_client
+    if modbus_client is None or not modbus_client.connected:
+        # pas de client worker dispo pyro non connecté
+        # client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
+        #                       parity=PARITY, stopbits=STOPBITS,
+        #                       bytesize=BYTESIZE, timeout=TIMEOUT)
+        # try:
+        #     if not client.connect():
+        #         return False, "Connexion impossible"
+        #     resp = client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
+        #     if resp.isError():
+        #         return False, str(resp)
+        #     regs = resp.registers
+        #     hex_str = ' '.join(f"{(v>>8)&0xFF:02X}{v&0xFF:02X}" for v in regs)
+        #     return True, hex_str
+        # finally:
+        #     client.close()
+        return False, "Connexion impossible"
+    else:
+        # Utilise le client du worker si disponible
+        try:
+            # resp = modbus_client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
+            # if resp.isError():
+            #     return False, str(resp)
+            # regs = resp.registers
+            # hex_str = ' '.join(f"{(v>>8)&0xFF:02X}{v&0xFF:02X}" for v in regs)
+            # return True, hex_str
+            resp = modbus_client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
+            if resp.isError():
+                return False, str(resp)
+            
+            regs = resp.registers
+            octets = []
 
-        resp = client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
-        if resp.isError():
-            return False, str(resp)
+            # Conversion de tous les registres en octets
+            for val in regs:
+                octets.append(f"{val & 0xFF:02X}")
+                octets.append(f"{(val >> 8) & 0xFF:02X}")
+                
 
-        regs = resp.registers
-        hex_bytes = []
-        for val in regs:
-            hex_bytes.append(f"{(val >> 8) & 0xFF:02X}")
-            hex_bytes.append(f"{val & 0xFF:02X}")
+            # Création des blocs de 4 octets avec tiret entre le 1er et le 2ème
+            blocks = []
+            for i in range(0, len(octets)-6, 4):
+                if i + 3 < len(octets):
+                    block = f"{octets[i]}-{octets[i+1]}{octets[i+2]}{octets[i+3]}"
+                # elif i + 2 < len(octets):
+                #     block = f"{octets[i]}-{octets[i+1]}{octets[i+2]}"
+                # elif i + 1 < len(octets):
+                #     block = f"{octets[i]}-{octets[i+1]}"
+                # else:
+                #     block = octets[i]
+                blocks.append(block)
+            i = i + 4
+            block = f"{octets[i]}{octets[i+1]}-{octets[i+2]}{octets[i+3]}{octets[i+4]}{octets[i+5]}"
+            blocks.append(block)
+            # Séparation des blocs par plusieurs espaces
+            formatted = ' '.join(blocks)
 
-        return True, ' '.join(hex_bytes)
+            return True, formatted
+            # regs = resp.registers
+            # hex_bytes = []
+            # for val in regs:
+            #     hex_bytes.append(f"{(val >> 8) & 0xFF:02X}")
+            #     hex_bytes.append(f"{val & 0xFF:02X}")
 
-    except Exception as e:
-        return False, str(e)
-    finally:
-        client.close()
+            # # Création des blocs de 4 octets
+            # blocks = []
+            # for i in range(0, len(hex_bytes), 4):
+            #     if i==1:
+            #         block = '-'.join(hex_bytes[i:i+4])
+            #     else:
+            #         block = ''.join(hex_bytes[i:i+4])
+            #     blocks.append(block)
 
+            # # On sépare les blocs par un espace plus large
+            # formatted = ' '.join(blocks)
+
+            # return True, formatted
+        except Exception as e:
+            return False, str(e)
+        
+# async def modbus_write_config(slave_id: int, hex_string: str):
+#     cleaned = re.sub(r'[^0-9A-Fa-f]', '', hex_string.upper())
+#     if not cleaned or len(cleaned) % 2 != 0:
+#         return False, "Longueur hex invalide (doit être paire)"
+
+#     try:
+#         bytes_data = bytes.fromhex(cleaned)
+#         values = []
+#         for i in range(0, len(bytes_data), 2):
+#             hi = bytes_data[i]
+#             lo = bytes_data[i + 1] if i + 1 < len(bytes_data) else 0
+#             values.append((hi << 8) | lo)
+
+#         client = ModbusClient(method='rtu', port=selected_port, baudrate=BAUDRATE,
+#                               parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
+#                               timeout=TIMEOUT)
+#         try:
+#             if not client.connect():
+#                 return False, "Connexion impossible"
+
+#             result = client.write_registers(CONFIG_START_REG, values, slave=slave_id)
+#             if result.isError():
+#                 return False, str(result)
+#             return True, f"{len(values)} registres écrits"
+#         finally:
+#             client.close()
+
+#     except Exception as e:
+#         return False, str(e)
 
 async def modbus_write_config(slave_id: int, hex_string: str):
+    global modbus_client
     cleaned = re.sub(r'[^0-9A-Fa-f]', '', hex_string.upper())
     if not cleaned or len(cleaned) % 2 != 0:
-        return False, "Longueur hex invalide (doit être paire)"
+        return False, "Longueur hex invalide"
 
     try:
         bytes_data = bytes.fromhex(cleaned)
@@ -219,24 +338,30 @@ async def modbus_write_config(slave_id: int, hex_string: str):
             lo = bytes_data[i + 1] if i + 1 < len(bytes_data) else 0
             values.append((hi << 8) | lo)
 
-        client = ModbusClient(method='rtu', port=selected_port, baudrate=BAUDRATE,
-                              parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
-                              timeout=TIMEOUT)
-        try:
+        # Priorité au client du worker s'il est connecté
+        if modbus_client and modbus_client.connected:
+            client = modbus_client
+            close_after = False
+        else:
+            client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
+                                  parity=PARITY, stopbits=STOPBITS,
+                                  bytesize=BYTESIZE, timeout=TIMEOUT)
             if not client.connect():
                 return False, "Connexion impossible"
+            close_after = True
 
+        try:
             result = client.write_registers(CONFIG_START_REG, values, slave=slave_id)
             if result.isError():
                 return False, str(result)
             return True, f"{len(values)} registres écrits"
         finally:
-            client.close()
+            if close_after and client:
+                client.close()
 
     except Exception as e:
         return False, str(e)
-
-
+    
 # ────────────────────────────────────────────────
 # UTILITAIRES HEX
 # ────────────────────────────────────────────────
@@ -320,6 +445,8 @@ async def main_page():
     with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full mx-auto shadow-lg rounded-xl px-4'):
         global_labels = {}
         analog_labels = {}
+        alim_labels = {}
+        alim_1A_labels = {}
         last_request = {}
         last_response = {}
         send_inputs = {}
@@ -342,6 +469,16 @@ async def main_page():
                         ui.label('  Statut :').classes('text-3xl')
                         g = ui.label('—').classes('text-4xl font-bold')
                         global_labels[dev_idx] = g
+
+                        ui.label(' / ALIM :').classes('text-3xl')
+                        a = ui.label('—').classes('text-4xl font-bold')
+                        alim_labels[dev_idx] = a
+
+                        ui.label('mV  / ALIM (1A) :').classes('text-3xl')
+                        a1A = ui.label('—').classes('text-4xl font-bold')
+                        alim_1A_labels[dev_idx] = a1A
+
+                        ui.label('mV').classes('text-3xl')
 
                     ui.separator()
 
@@ -369,13 +506,13 @@ async def main_page():
                     
                     # Configuration - deux champs
                     ui.separator()
-                    ui.label('Configuration (hex)').classes('text-3xl text-gray-600 mt-6 mb-2')
+                    ui.label('SEQUENCE').classes('text-3xl text-gray-600 mt-6 mb-2')
 
                     # Champ ENVOI
                     with ui.row().classes('items-center gap-3 w-full'):
                         send_inp = ui.input(
                             placeholder='ex: 01 02 A3 FF',
-                            label='Config à envoyer'
+                            label='Sequence à envoyer'
                         ).classes('flex-grow').props('outlined clearable')
 
                         async def paste_to_send():
@@ -400,11 +537,18 @@ async def main_page():
                     send_inp.on('update:model-value', on_send_change)
                     send_inputs[dev_idx] = send_inp
 
-                    # Champ LECTURE
-                    read_out = ui.input(
-                        label='Config lue'#,
-                        #readonly=True
-                    ).classes('mt-3').props('outlined filled')
+                    # # Champ LECTURE
+                    # read_out = ui.input(
+                    #     label='Config lue'#,
+                    #     #readonly=True
+                    # ).classes('mt-3').props('outlined filled')
+                    
+                    # Champ LECTURE - Version améliorée pour 55 registres
+                    ui.label('Sequence lue').classes('text-lg text-gray-400 mt-6 mb-2')
+                    read_out = ui.textarea(
+                        label='',
+                        placeholder='Les données hex apparaîtront ici...'
+                    ).classes('w-full h-64 font-mono text-lg bg-zinc-950').props('outlined readonly')   
 
                     read_outputs[dev_idx] = read_out
 
@@ -457,11 +601,7 @@ async def main_page():
     ui.label(url).classes("text-blue-600")
     
     async def refresh_ui():
-
-        now_str = time.strftime('%H:%M:%S')
-
         for sid in SLAVE_IDS:
-
             if sid not in active_slaves:
                 if memo_state[sid] == False:
                     memo_state[sid] = True
@@ -498,11 +638,10 @@ async def main_page():
 
                 analog_labels[sid][i].text = txt
                 analog_labels[sid][i].classes(replace=cls)
-            
-            
-        
-        #global_status.text = f'Refresh GUI state : {now_str}'
-    
+ 
+            alim_labels[sid].text = state["alim"]
+            alim_1A_labels[sid].text = state["alim_1A"]
+ 
     ui.timer(0.5, refresh_ui)
 
     async def close_app():

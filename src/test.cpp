@@ -151,7 +151,6 @@ void check_bpon (void)
 	
 		while(BP_ON == 0);
 	}
-
 }
 
 void check_UAlim (void)
@@ -161,37 +160,12 @@ void check_UAlim (void)
 	char 		string_test[25];
 
 	temp = analogReadMilliVolts(U_TEST_1A_ADC);
-
-	//Test.U_Alim = (float) temp * CONVERSION_ADC;
 	Test.U_Alim = temp * PONT_DIVISEUR;
 
 	sprintf(string_test, "U ALIM =%d", Test.U_Alim);
 	SERIAL_DEBUG(string_test);
 
-	//Test.U_Alim = Test.U_Alim * 100.0f;
-
-	// itoa((int) Test.U_Alim, &temp_tab[0], 10);
-
-	// if (Test.U_Alim < 10000.0f)
-	// {
-	// 	Ecran.Digit[0] = ' ';
-	// 	Ecran.Digit[1] = temp_tab[0];
-	// 	Ecran.Digit[2] = '.';
-	// 	Ecran.Digit[3] = temp_tab[1];
-	// 	Ecran.Digit[4] = temp_tab[2];
-	// 	Ecran.Digit[5] = temp_tab[3];
-	// 	Ecran.Digit[6] = 0;
-	// }
-	// else
-	// {
-	// 	Ecran.Digit[0] = temp_tab[0];
-	// 	Ecran.Digit[1] = temp_tab[1];
-	// 	Ecran.Digit[2] = '.';
-	// 	Ecran.Digit[3] = temp_tab[2];
-	// 	Ecran.Digit[4] = temp_tab[3];
-	// 	Ecran.Digit[5] = 0;
-	// 	Ecran.Digit[6] = 0;
-	// }
+	Modbus.state.alim = (uint16_t) Test.U_Alim;
 }
 
 uint32_t check_UInfla (void)
@@ -199,17 +173,12 @@ uint32_t check_UInfla (void)
 	uint32_t temp = 0;
 
 	digitalWrite(LOAD_TEST_20mA, HIGH);
-	
 	temp = analogReadMilliVolts(U_TEST_INF);
-
 	digitalWrite(LOAD_TEST_20mA, LOW);
 
-	//Test.U_Infla = (float) temp * CONVERSION_ADC;
 	Test.U_Infla = temp;
 
 	SERIAL_DEBUG(Test.U_Infla);
-	
-	//Test.U_Infla = Test.U_Infla * 100.0f;
 
 	return (uint32_t) Test.U_Infla;
 }
@@ -222,10 +191,10 @@ void test_update_analog (uint8_t number, uint8_t state)
 		SERIAL_DEBUG(string);
 	#endif
 
-	modbus_analog_register[(((number-1) < 8) ? 0 : 1)] |= state << ((((number-1) < 8) ? (number-1) : (number-8-1)) * 2);
+	Modbus.state.analog[(((number-1) < 8) ? 0 : 1)] |= state << ((((number-1) < 8) ? (number-1) : (number-8-1)) * 2);
 
 	#if DEBUG_PRINT
-		sprintf(string, "modbus_analog_register[0]=0x%04X, modbus_analog_register[1]=0x%04X", modbus_analog_register[0], modbus_analog_register[1]);
+		sprintf(string, "Modbus.state.analog[0]=0x%04X, Modbus.state.analog[1]=0x%04X", Modbus.state.analog[0], Modbus.state.analog[1]);
 		SERIAL_DEBUG(string);
 	#endif
 }
@@ -242,6 +211,9 @@ byte test_process (void)
 			{
 				Test.Step = TEST_ALIM;
 				Test.Time = millis();
+				
+				Modbus.state.analog[0]=0;
+				Modbus.state.analog[1]=0;
 			}
 			break;
 
@@ -274,26 +246,23 @@ byte test_process (void)
 				ecran_blank();
 				check_comutest(LOW);
 				Test.Time = millis();
-				modbus_analog_register[0]=0;
-				modbus_analog_register[1]=0;
-				Test.no_display_refresh = true;
 			}
 			break;
 		case TEST_INFLA:
-			if (Cf.Data[Test.Cpt*3] == 0)
+			if (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 0)
 			{
 				// Fin du test infla
 				Test.Step = TEST_FIN_INFLA;
 			}
 			else if (TempsSup(Test.Time, TDef20ms))
 			{
-                if (Cf.Data[Test.Cpt*3] == PAUSE_VALUE) // MOD_V0010
+                if (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == PAUSE_VALUE) // MOD_V0010
                 {
                     Test.Step = TEST_NO_INFLA_PRINT;
                 }
                 else
                 {
-                    register_one_tir_on(Cf.Data[Test.Cpt*3]);
+                    register_one_tir_on(Cf.Data[Test.Cpt*CF_SECTOR_SIZE]);
                     Test.Step = TEST_INFLA_2;
                 }
                 Test.Time = millis();
@@ -305,22 +274,22 @@ byte test_process (void)
 				temp = check_UInfla();
 				
 				#if TEST_FCT_ANALOG
-					if (	(Cf.Data[Test.Cpt*3] == 1) || (Cf.Data[Test.Cpt*3] == 4)
-						||	(Cf.Data[Test.Cpt*3] == 9) || (Cf.Data[Test.Cpt*3] == 12))
+					if (	(Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 1) || (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 4)
+						||	(Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 9) || (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 12))
 					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_OK);
+						test_update_analog(Cf.Data[Test.Cpt*CF_SECTOR_SIZE], ANALOG_OK);
 						Test.Step = TEST_INFLA_OK;
 					}
-					else if (	(Cf.Data[Test.Cpt*3] == 2) || (Cf.Data[Test.Cpt*3] == 3)
-							 ||	(Cf.Data[Test.Cpt*3] == 10) || (Cf.Data[Test.Cpt*3] == 13))
+					else if (	(Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 2) || (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 3)
+							 ||	(Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 10) || (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 13))
 					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_MOYEN);
+						test_update_analog(Cf.Data[Test.Cpt*CF_SECTOR_SIZE], ANALOG_MOYEN);
 						Test.Step = TEST_INFLA_NOK;
 					}
-					else if (	(Cf.Data[Test.Cpt*3] == 5) || (Cf.Data[Test.Cpt*3] == 8)
-							 ||	(Cf.Data[Test.Cpt*3] == 14) || (Cf.Data[Test.Cpt*3] == 15))
+					else if (	(Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 5) || (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 8)
+							 ||	(Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 14) || (Cf.Data[Test.Cpt*CF_SECTOR_SIZE] == 15))
 					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_KO);
+						test_update_analog(Cf.Data[Test.Cpt*CF_SECTOR_SIZE], ANALOG_KO);
 						Test.Step = TEST_INFLA_NOK;
 					}
 					else
@@ -330,17 +299,17 @@ byte test_process (void)
 				#else
 					if (temp > DefValInflaNOK) 			
 					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_KO);
+						test_update_analog(Cf.Data[Test.Cpt*CF_SECTOR_SIZE], ANALOG_KO);
 						Test.Step = TEST_INFLA_NOK;
 					}
 					else if (temp > DefValInflaMOYEN) 	
 					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_MOYEN);
+						test_update_analog(Cf.Data[Test.Cpt*CF_SECTOR_SIZE], ANALOG_MOYEN);
 						Test.Step = TEST_INFLA_NOK;
 					}
 					else
 					{
-						test_update_analog(Cf.Data[Test.Cpt*3], ANALOG_OK);
+						test_update_analog(Cf.Data[Test.Cpt*CF_SECTOR_SIZE], ANALOG_OK);
 						Test.Step = TEST_INFLA_OK;
 					}
 				#endif
@@ -350,7 +319,7 @@ byte test_process (void)
 					{
 						char string [100];
 
-						sprintf(string, "Out = %d\r\n Analog = %d", Cf.Data[Test.Cpt*3], temp);
+						sprintf(string, "Out = %d\r\n Analog = %d", Cf.Data[Test.Cpt*CF_SECTOR_SIZE], temp);
 						display.textflow(st7567sfGK::toptobottom);
 						display.clear(st7567sfGK::colorblack);
 						display.setFont(&FreeSans9pt7b);
@@ -371,7 +340,7 @@ byte test_process (void)
 
 				// Affiche le num de la pause
 				#if PRINT_TEST_OUTPUT
-					ecran_print_num(Cf.Data[Test.Cpt*3]);
+					ecran_print_num(Cf.Data[Test.Cpt*CF_SECTOR_SIZE]);
 				#endif
 				Test.Time = millis();
 			}
@@ -409,7 +378,6 @@ byte test_process (void)
 			}
 			break;
 		case TEST_FIN_INFLA:
-			Test.no_display_refresh = false;
 			if (Test.Cpt != 0)
 			{
 				ecran_print_num(Cf.Data[OFFSET_LAST_OUTPUT]);

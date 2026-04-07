@@ -22,20 +22,13 @@ void arm_UAlim_1A (bool print)
 
 	digitalWrite(LOAD_TEST_1A, LOW);
 	
-	// DecToStr(temp, result);
-
-	// SERIAL_DEBUG(result);
-
-	//Arm.U_Alim_1A = (float) temp * CONVERSION_ADC;
 	Arm.U_Alim_1A = temp * PONT_DIVISEUR;
-	//Arm.U_Alim_1A = Arm.U_Alim_1A * 100.0f;
 	
 	sprintf(string_test, "U ALIM 1A=%d", Arm.U_Alim_1A);
 	SERIAL_DEBUG(string_test);
-
-	// TODO vérifier la conversion
-	// Digital value read 206 = 7.26V
 	
+	Modbus.state.alim_1A = (uint16_t) Arm.U_Alim_1A;
+
 	if (print == true)
 	{
 		itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);

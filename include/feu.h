@@ -2,7 +2,7 @@
 #define	FEU_H
 
 // Temps activation infla en ms (Attention ce temps ne doit pas dépasser 50ms)
-#define DefTempsTir			40
+#define DefTempsTir			5//40
 
 // Temps d'attente minimum pour stopper la séquence automatique en cours
 #define TIME_TO_STOP		5000
@@ -24,7 +24,8 @@
 // volatile uint32_t Cpt1Sur20s;
 
 
-#define CPT_1_20_S      (unsigned long) ((millis() - Feu.TimeStart) / 50)
+// #define CPT_1_20_S      (unsigned long) ((millis() - Feu.TimeStart) / 50)
+#define CPT_1_100_S      (unsigned long) ((millis() - Feu.TimeStart) / 10)
 
 typedef struct	StructFeu{
 	uint8_t			Step;

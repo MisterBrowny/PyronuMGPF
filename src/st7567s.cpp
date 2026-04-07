@@ -142,15 +142,15 @@ void st7567s_refresh (void)
         sprintf(string_test, "  Tir %2 d:   ", i + 1);
       }
       display.print(string_test);
-      if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
+      if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
       {        
         sprintf(string_test, "OK                        ");
       }
-      else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
+      else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
       {
         sprintf(string_test, "MOYEN         ");
       }
-      else if (((modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
+      else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
       {
         sprintf(string_test, "->  !  KO  !       ");
       }
@@ -159,7 +159,7 @@ void st7567s_refresh (void)
         sprintf(string_test, "  -                          ");
       }
       #if DEBUG_PRINT
-        sprintf(string, "index = %d, shift = %d, result = 0x%04X", ((i < 8) ? 0 : 1), ((i < 8) ? i : i - 8)*2, (modbus_analog_register[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2));
+        sprintf(string, "index = %d, shift = %d, result = 0x%04X", ((i < 8) ? 0 : 1), ((i < 8) ? i : i - 8)*2, (Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2));
         SERIAL_DEBUG(string);
         SERIAL_DEBUG(string_test);
       #endif

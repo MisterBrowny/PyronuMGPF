@@ -50,7 +50,6 @@ typedef struct	StructTest{
 	float			U_Alim;
 	float			U_Infla;
 	bool			print_result;
-	bool			no_display_refresh;
 }struTest;
 
 extern struTest Test;

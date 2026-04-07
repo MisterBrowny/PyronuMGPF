@@ -143,15 +143,17 @@ void feu_process (void)
 			else
 			{
 				// Calcul le temps auquel il faut tirer le prochain coup
-				Feu.TimeToFire = Cf.Data[(Feu.Cpt*CF_SECTOR_SIZE) + 1] << 8;
-				Feu.TimeToFire |= Cf.Data[(Feu.Cpt*CF_SECTOR_SIZE) + 2];
+				Feu.TimeToFire  = (unsigned long) (Cf.Data[(Feu.Cpt*CF_SECTOR_SIZE) + 1] << 16);
+				Feu.TimeToFire |= (unsigned long) (Cf.Data[(Feu.Cpt*CF_SECTOR_SIZE) + 2] << 8);
+				Feu.TimeToFire |= (unsigned long) (Cf.Data[(Feu.Cpt*CF_SECTOR_SIZE) + 3]);
 
 				Feu.Step = FEU_GO;
 			}
 			break;
 		case FEU_GO:
 			// if (Cpt1Sur20s == Feu.TimeToFire)
-			if (CPT_1_20_S == Feu.TimeToFire)
+			// if (CPT_1_20_S == Feu.TimeToFire)
+			if (CPT_1_100_S == Feu.TimeToFire)
 			{
 				if (AT_SIGNAL == HIGH)
 				{
@@ -210,6 +212,8 @@ void feu_process (void)
 		case FEU_RESTART:
 			// Decompte = Feu.Decompte;
 			// Cpt1Sur20s = Feu.SavedTime;
+			
+			// Feu.TimeStart = millis() - millis_saved() - Feu.TimeStart;
 			Feu.TimeStart = millis() - Feu.SavedTime;
 
 			Feu.SaveTime = false;

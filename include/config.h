@@ -5,22 +5,21 @@
 #define PAUSE_VALUE         99  	// MOD_V0010: valeur de sortie pour activer la pause
 #define NB_PAUSE_MAX        10   	// MOD_V0010: nb de pause max dans la séquence // Passage à 10
 #define	NB_TIR				16
-#define	CF_SECTOR_SIZE		3
-#define	CF_CONTROL_SIZE		5
+#define	CF_SECTOR_SIZE		4
+#define	CF_CONTROL_SIZE		6
 #define	CF_SIZE				(NB_TIR * CF_SECTOR_SIZE + NB_PAUSE_MAX * CF_SECTOR_SIZE + CF_CONTROL_SIZE) // MOD_V0010
 
-#define OFFSET_LAST_OUTPUT  (NB_TIR * CF_SECTOR_SIZE + NB_PAUSE_MAX * CF_SECTOR_SIZE)
+#define OFFSET_LAST_OUTPUT  (NB_TIR * CF_SECTOR_SIZE + NB_PAUSE_MAX * CF_SECTOR_SIZE+1)
 #define OFFSET_CHECKSUM_1   (OFFSET_LAST_OUTPUT + 1)
 #define OFFSET_CHECKSUM_2   (OFFSET_LAST_OUTPUT + 2)
 #define OFFSET_CHECKSUM_3   (OFFSET_LAST_OUTPUT + 3)
 #define OFFSET_CHECKSUM_4   (OFFSET_LAST_OUTPUT + 4)
 
 typedef struct StructConfig {
-	uint8_t					Data[CF_SIZE]; // 16 * 3  + 5 * 3 + 5 // MOD_V0010
+	uint8_t					Data[CF_SIZE]; // NB_TIR * CF_SECTOR_SIZE  + NB_PAUSE_MAX * CF_SECTOR_SIZE + CF_CONTROL_SIZE
 	volatile uint8_t		Index;
 	volatile unsigned long	Time1;
 	unsigned long 			Time2;
-	unsigned				IsLong :1;			
 }struConfig;
 
 extern struConfig	Cf;
