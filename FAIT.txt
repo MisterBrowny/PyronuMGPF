@@ -128,3 +128,46 @@ A noter que l'infla part en 2 ms à 1 A et en 1 ms à 2 A.
 27/ affiches sur supervisor UALIM et UALIM à 1 => FAIT
 
 35/ pourquoi la lecture config ne marche pas ? modif modbus en cause ? oui => ca marche maintenant
+
+14/ Retour RS485
+Resultat de test boitier => OK
+Etat boitier : ARMED - GO - TEST - END => OK
+
+
+/!\ le test à 1A doit être décalé de 20ms selon l'ID slave modbus du boitier pour éviter qu'il le fassent tous en meme temps !
+=> FAIT
+
+28/ pilotage led bouton test / les BP_ON  (GPIO2) en fonction de ce qu'on doit appuyer et du commutateur ON puissance => FAIT
+
+39/ réparer les lecture premier infla
+=> 30 mesure moyenné => FAIT
+=> régule 20mA allumé au début du test et éteint à la fin du test infla => FAIT
+=> a tester
+
+
+26/ revoir les messages affichés sur écran => FAIT en partie
+  30/ =>  COM_ ON ! commutateur puissance actif => FAIT "Puissance inactive Tir impossible"
+      =>  E_t ! => FAIT  "Puissance active Test impossible"
+      => wait => FAIT "Test (Bp Test) ou Tir (Bp On) ?"
+
+     
+
+
+32/ Changement process démarrage => FAIT
+--------------------------------------------
+1/ affiché sur le même écran => OK
+    1.1/ version => OK
+    1.2/ ID Slave MODBUS => OK
+    1.3/ SEQ = Config => OK
+2/ Si COMMU_ON affiché commut ateur puissance actif => OK
+Sinon  Lancer le test afficher l'état UALIM et l'état UALIM 1A sur l'écran de test results => OK
+
+3/ On rappuis sur BP_test (anneau led BP_test allumé et BP_ON éteint) => affichage ecran wait
+
+4/ On pilote les led en fct de commu puissance 
+clignote celui qui est pas sélectionné
+
+5/ sur l'écran wait on a le choix de partir sur ARMED ou TEST en fonction COMMU_ON 
+
+6/ Si on part COMU_ON on arme en appuyant lontempgs >3 secondes sur BP_ON => OK
+et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le bouton ARMER pour armer le PyronuMGPF" => PAS FAIT

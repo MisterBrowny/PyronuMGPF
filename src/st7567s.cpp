@@ -185,4 +185,4 @@ void st7567s_refresh (void)
     display.println((const char*) Ecran.Digits);
     memcpy((void*)Ecran.MemoDigit, (const void*) Ecran.Digit, NUM_CHAR);
   }
-  }
+}

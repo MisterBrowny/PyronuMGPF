@@ -22,6 +22,10 @@ void hw_config (void)
 	pinMode(LED_BPTEST, OUTPUT);
 	digitalWrite(LED_BPTEST, HIGH);
 
+	// pilote led LED_BPON
+	pinMode(LED_BPON, OUTPUT);
+	digitalWrite(LED_BPON, LOW);
+
 	// pilote la puissance pour le tir (ancien TIR/VERROU_TIR)
 	pinMode(SECU_PUISSANCE, OUTPUT);
 	digitalWrite(SECU_PUISSANCE, LOW);

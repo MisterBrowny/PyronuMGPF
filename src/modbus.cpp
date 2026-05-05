@@ -130,6 +130,6 @@ void modbus_refresh (void)
             Modbus.state.global_state = MODBUS_STATE_END;
         }
     }
-    modbus_app_test();
+    //modbus_app_test();
     modbus.poll();   // ← indispensable, traite toutes les demandes du maître
 }

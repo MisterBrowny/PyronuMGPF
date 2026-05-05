@@ -1,24 +1,27 @@
 TODO
 
 
-14/ Retour RS485
-Resultat de test boitier : 
-Etat boitier : ARMED - GO - TEST - END
+19/ Ajouter un état PROG 
+  => c'est seulement dans cet état que la rubrique config devrait pouvoir s'écrire.
   
   if (Micro.State == STOP)
-   global_state = MODBUS_STATE_GO; // TODO estce ok ? ajout d'un etat 
+   global_state = MODBUS_STATE_GO; // TODO estce ok ? NON
+    => ajout d'un etat STOP 
+    => ajout d'un etat BREAK
 
-19/ Ajouter un état PROG 
-  => c'est seulement dans cet état que la rubrique config devrait pouvoir s'afficher.
 
 20/
   Dans l'état TEST et ARMED affiché le test INFLA
   Dans l'état GO et END affiché les lignes tirées 
+    PRET / TIRER 11
+    0b00 "-", 0b01: "DEFAULT", 0b10: "PRET", 0b11: "TIRER" 
+    0b00 "ABSENT", 0b01: "KO", 0b10: "MOYEN", 0b11: "OK" 
+    ajouter un troisième état TIRER
 
 
 16/ Chargement par bus 
  => a rendre uniquement possible en mode programmation
- => s'affrannchir des espace et tirer
+ => s'affrannchir des espace et tirer => OK
 
 
 33/ LED RGB
@@ -33,34 +36,29 @@ End bleu fixe
 Armed chenillard rouge
 
 
-26/ revoir les messages affichés sur écran prévoir OLD_STYLE précompile
+41/ Supervisor recompilé en /onedir au lieu de /onefile
+
+42/ revoir les messages affichés sur écran
+
+_________________________
+QUESTIONS
+_________________________
+
+36/ lors d'un tir allumer les led ?
+
+37/ Faire un TEST en fin de tir pour voir les ligne encore présente ? 
+=> led allumé si ligne encore présente ?
+
+38/ On pourrait détecter une ligne présente / cablée alors qu'elle n'est pas active dans la config
 
 
-28/ pilotage bouton test / BP_ON  GPIO2 / PIN en fonction de ce qu'on doit appuyer et du commutateur ON puissance
-
-
-30/ =>  COM_ ON ! commutateur puissance actif
-
-
-32/ Changement process démarrage 
---------------------------------------------
-1/ affiché sur le même écran => OK
-    1.1/ version => OK
-    1.2/ ID Slave MODBUS => OK
-    1.3/ SEQ = Config => OK
-2/ Si COMMU_ON affiché commut ateur puissance actif => OK
-Sinon  Lancer le test afficher l'état UALIM et l'état UALIM 1A sur l'écran de test results => OK
-
-3/ On rappuis sur BP_test (anneau led BP_test allumé et BP_ON éteint) => affichage ecran wait
-
-4/ On pilote les led en fct de commu puissance 
-clignote celui qui est pas sélectionné
-
-5/ sur l'écran wait on a le choix de partir sur ARMED ou TEST en fonction COMMU_ON
-
-6/ Si on part COMU_ON on arme en appuyant lontempgs >3 secondes sur BP_ON => OK
-et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le bouton ARMER pour armer le PyronuMGPF"
-
-/!\ le test à 1A doit être décalé de 20ms selon l'ID slave modbus du boitier pour éviter qu'il le fassent tous en meme temps !
-=> FAIT
----------------------------------------------
+40/ void check_NB_AT (byte State)
+{
+// TODO	
+	if (State == LOW)
+	{// Si NB_AT est à l'état bas, AT est inactif => boucle while (pas de tir possible)
+	}
+	else if (State == HIGH)
+	{// Si NB_AT est inactif => boucle while 
+	}
+}

@@ -10,6 +10,8 @@
 // Attention la taille de la config change pour intégrer le nombre de pause max NB_PAUSE_MAX
 // voir le fichier 'new sequence v1.3.ods'
 
+#define COMU_PUISSANCE_ON	1
+#define COMU_PUISSANCE_OFF	2
 
 // Micro->Phase
 #define MICRO_WAIT		0x00
@@ -45,6 +47,8 @@ typedef struct StructMicro {
 	unsigned long		Time;
 	uint8_t				Phase;
 	uint8_t				Step;
+	bool 				etat_led_bouton;
+	uint8_t 			memo_comu;
 	union {
 		uint8_t	State;
 		struct	StructState	Stat;

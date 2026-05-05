@@ -101,6 +101,8 @@ void armement_process (void)
 			}
 			else if (TempsSup(Arm.Time, TDef3sec))
 			{
+				digitalWrite(LED_BPTEST, LOW);
+				digitalWrite(LED_BPON, LOW);
 				Micro.Phase = MICRO_FEU;
 				Micro.State = ARMED;
 			}

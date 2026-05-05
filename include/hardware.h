@@ -68,6 +68,8 @@ extern const uint8_t SLAVE_ID;
 
 #define DefValInflaNOK	    1945			 // en mV => Correspond d'après mesure à 47ohms // TODO mettre la valeur ohmique
 
+#define DefNbMesureINFLA    30
+
 // En dessous OK 
 // 36 ohm pour 20mA = 0.72 Volts > acceptable => clignote
 // 50 ohm pour 20mA = 1 Volt > KO 

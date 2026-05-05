@@ -1,7 +1,7 @@
 #include "includes.h"
 
 #define PRINT_TEST_OUTPUT	0
-#define TEST_FCT_ANALOG		1
+#define TEST_FCT_ANALOG		0
 
 struTest Test;
 
@@ -13,13 +13,15 @@ void check_comutest (byte State)
 		{
 			ecran_blank();
 			ecran_com_on();
-			st7567s_refresh();
-
+			// st7567s_refresh()
+			
 			SERIAL_DEBUG("Erreur - puissance active");
 
 			if (Micro.Phase == MICRO_TEST)
 			{
 				Test.Step = TEST_WAIT;
+				register_raz();
+				digitalWrite(LOAD_TEST_20mA, LOW);
 				ecran_blank();
 			}
 		}
@@ -30,7 +32,7 @@ void check_comutest (byte State)
 		{
 			ecran_blank();
 			ecran_erreur_tir();
-			st7567s_refresh();
+			//st7567s_refresh();
 
 			SERIAL_DEBUG("Erreur - puissance inactive tir impossible");
 		}
@@ -61,44 +63,6 @@ void check_comutest (byte State)
 	// }
 }
 
-void check_NB_AT (byte State)
-{
-// TODO	
-	if (State == LOW)
-	{// Si NB_AT est à l'état bas, AT est inactif => boucle while (pas de tir possible)
-		while (AT_SIGNAL == LOW)
-		{
-			ecran_erreur_tir();
-			st7567s_refresh();
-
-			if (Micro.Phase == MICRO_TEST)
-			{
-				Test.Step = TEST_WAIT;
-				ecran_blank();
-			}
-		}
-	}
-	else if (State == HIGH)
-	{// Si NB_AT est inactif => boucle while 
-		while (COMU_PUISS_NON == LOW)
-		{
-			ecran_erreur_tir();
-			st7567s_refresh();
-		}
-	}
-
-	// Cas d'erreur bouton
-	if (	((COMU_PUISS_NON == LOW) && (COMU_PUISS_OUI == LOW))
-		||	((COMU_PUISS_NON == HIGH) && (COMU_PUISS_OUI == HIGH)))
-	{
-		while(1)
-		{
-			ecran_erreur_comu();
-			st7567s_refresh();
-		}
-	}
-}
-
 byte check_program_0 (void)
 {
 	byte ret = false;
@@ -119,7 +83,7 @@ byte check_program_0 (void)
 
 		Micro.Step = MICRO_STEP_2;
 
-		ecran_wait();
+		//ecran_wait();
 	}
 
 	return ret;
@@ -168,13 +132,33 @@ void check_UAlim (void)
 	Modbus.state.alim = (uint16_t) Test.U_Alim;
 }
 
+uint32_t moy_analog (uint8_t pin, uint32_t nb_mesure)
+{
+	uint32_t temp = 0;
+	uint32_t i = 0;
+
+	for (i = 0; i < nb_mesure; i ++)
+	{	
+		temp += analogReadMilliVolts(pin);
+	}
+
+	temp = (uint32_t) ((float) temp / (float) nb_mesure);
+	
+	return temp;
+}
+
 uint32_t check_UInfla (void)
 {
 	uint32_t temp = 0;
 
-	digitalWrite(LOAD_TEST_20mA, HIGH);
-	temp = analogReadMilliVolts(U_TEST_INF);
-	digitalWrite(LOAD_TEST_20mA, LOW);
+	// Déplacer en début de test INFLA
+	//digitalWrite(LOAD_TEST_20mA, HIGH);
+	
+	//temp = analogReadMilliVolts(U_TEST_INF);
+	temp = moy_analog(U_TEST_INF, DefNbMesureINFLA);
+
+	// Déplacer en début de test INFLA
+	//digitalWrite(LOAD_TEST_20mA, LOW);
 
 	Test.U_Infla = temp;
 
@@ -245,6 +229,7 @@ byte test_process (void)
 
 				ecran_blank();
 				check_comutest(LOW);
+				digitalWrite(LOAD_TEST_20mA, HIGH);
 				Test.Time = millis();
 			}
 			break;
@@ -393,6 +378,7 @@ byte test_process (void)
 			Ecran.Digit[2] = '-';
 
 			Test.Step = TEST_FIN_INFLA_2;
+			digitalWrite(LOAD_TEST_20mA, LOW);
 			Test.Time = millis();
 			break;
 		case TEST_FIN_INFLA_2:
@@ -475,6 +461,7 @@ byte test_process (void)
 			Ecran.Digit[2] = '-';
 			
 			Test.Step = TEST_FIN_INFLA_P0_2;
+			digitalWrite(LOAD_TEST_20mA, LOW);
 			Test.Time = millis();
 			break;
 		case TEST_FIN_INFLA_P0_2:

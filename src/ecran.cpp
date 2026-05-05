@@ -45,13 +45,19 @@ void ecran_print_num (byte Num)
 
 void ecran_wait (void)
 {
-	Ecran.Digit[0] = 'w';
-	Ecran.Digit[1] = 'a';
-	Ecran.Digit[2] = 'i';
-	Ecran.Digit[3] = 't';
-	Ecran.Digit[4] = 0;
-	Ecran.Digit[5] = 0;
-	Ecran.Digit[6] = 0;
+	// Ecran.Digit[0] = 'w';
+	// Ecran.Digit[1] = 'a';
+	// Ecran.Digit[2] = 'i';
+	// Ecran.Digit[3] = 't';
+	// Ecran.Digit[4] = 0;
+	// Ecran.Digit[5] = 0;
+	// Ecran.Digit[6] = 0;
+	display.textflow(st7567sfGK::toptobottom);
+    display.clear(st7567sfGK::colorblack);
+    display.setFont(&FreeSans9pt7b);
+	display.println("Test (Bp Test)");
+	display.println("   ou");
+	display.println("Tir (Bp On) ?");
 }
 
 void ecran_blank (void)
@@ -68,24 +74,38 @@ void ecran_blank (void)
 
 void ecran_erreur_tir (void)
 {
-	Ecran.Digit[0] = 'E';
-	Ecran.Digit[1] = '_';
-	Ecran.Digit[2] = 't';
-	Ecran.Digit[3] = ' ';
-	Ecran.Digit[4] = ' ';
-	Ecran.Digit[5] = ' ';
-	Ecran.Digit[6] = 0;
+	// Ecran.Digit[0] = 'E';
+	// Ecran.Digit[1] = '_';
+	// Ecran.Digit[2] = 't';
+	// Ecran.Digit[3] = ' ';
+	// Ecran.Digit[4] = ' ';
+	// Ecran.Digit[5] = ' ';
+	// Ecran.Digit[6] = 0;
+
+	display.textflow(st7567sfGK::toptobottom);
+    display.clear(st7567sfGK::colorblack);
+    display.setFont(&FreeSans9pt7b);
+	display.println("Puissance");
+	display.println("inactive");
+	display.println("Tir impossible");
 }
 
 void ecran_com_on (void)
 {
-	Ecran.Digit[0] = 'C';
-	Ecran.Digit[1] = 'O';
-	Ecran.Digit[2] = 'M';
-	Ecran.Digit[3] = '_';
-	Ecran.Digit[4] = 'o';
-	Ecran.Digit[5] = 'n';
-	Ecran.Digit[6] = 0;
+	// Ecran.Digit[0] = 'C';
+	// Ecran.Digit[1] = 'O';
+	// Ecran.Digit[2] = 'M';
+	// Ecran.Digit[3] = '_';
+	// Ecran.Digit[4] = 'o';
+	// Ecran.Digit[5] = 'n';
+	// Ecran.Digit[6] = 0;
+
+	display.textflow(st7567sfGK::toptobottom);
+    display.clear(st7567sfGK::colorblack);
+    display.setFont(&FreeSans9pt7b);
+	display.println("Puissance");
+	display.println("active");
+	display.println("Test impossible");
 }
 
 void ecran_erreur_comu (void)
