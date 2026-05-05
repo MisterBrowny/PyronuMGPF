@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 // Version
-const char Version[] = "V00004";
+const char Version[] = "V00005";
 
 // Debug Print
 #define DEBUG_PRINT     1       // A mettre à 1 pour activer l'envoi de log sur la liaison série
