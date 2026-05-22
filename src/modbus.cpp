@@ -29,6 +29,8 @@
 #define MODBUS_STATE_ARMED  3
 #define MODBUS_STATE_TEST   4
 #define MODBUS_STATE_PROG   5
+#define MODBUS_STATE_STOP   6
+#define MODBUS_STATE_PAUSE  7
 
 #define MODBUS_ANALOG_NB_VALUE    4
 #define MODBUS_ANALOG_ALL_OK      0xFFFF
@@ -113,22 +115,37 @@ void modbus_refresh (void)
     }    
     else if (Micro.Phase == MICRO_ARM)
     {
-        Modbus.state.global_state = MODBUS_STATE_ARMED;
+        Modbus.state.global_state = MODBUS_STATE_TEST;
     }    
     else if (Micro.Phase == MICRO_FEU)
     {
-        if (Micro.State == GO)
+        if (Micro.State == ARMED)
+        {
+            Modbus.state.global_state = MODBUS_STATE_ARMED;
+        }
+        else if (Micro.State == GO)
         {
             Modbus.state.global_state = MODBUS_STATE_GO;
         }
         else if (Micro.State == STOP)
         {
-            Modbus.state.global_state = MODBUS_STATE_GO; // TODO estce ok ?
+            if (Feu.Step == FEU_PAUSE)
+            {
+                Modbus.state.global_state = MODBUS_STATE_PAUSE;
+            }
+            else if (Feu.Step == FEU_STOP)
+            {
+                Modbus.state.global_state = MODBUS_STATE_STOP;
+            }
         }
         else if (Micro.State == END)
         {
             Modbus.state.global_state = MODBUS_STATE_END;
         }
+    }
+    else if (Micro.Phase == MICRO_PROG)
+    {
+        Modbus.state.global_state = MODBUS_STATE_PROG;
     }
     //modbus_app_test();
     modbus.poll();   // ← indispensable, traite toutes les demandes du maître

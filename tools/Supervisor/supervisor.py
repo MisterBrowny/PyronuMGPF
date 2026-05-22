@@ -63,6 +63,9 @@ GLOBAL_MAP = {
     2: ("GO",    "text-3xl text-red-600 font-bold animate-pulse"),
     3: ("ARMED", "text-3xl text-orange-500 font-bold animate-pulse"),
     4: ("TEST",  "text-3xl text-green-600 font-bold animate-pulse"),
+    5: ("PROG",  "text-3xl text-sky-800 font-bold animate-pulse"),
+    6: ("STOP",  "text-3xl text-orange-400 font-bold animate-pulse"),
+    7: ("PAUSE",  "text-3xl text-orange-300 font-bold animate-pulse"),
 }
 
 ANALOG_MAP = {
@@ -99,6 +102,9 @@ device_states = {
 
 modbus_client = None
 modbus_running = True
+modbus_polling = True
+last_connection_attempt = 0
+modbus_lock = threading.Lock()
 
 # ────────────────────────────────────────────────
 # FONCTIONS MODBUS
@@ -151,14 +157,13 @@ def read_device(client, sid):
 
 def modbus_worker():
 
-    global modbus_client
-
+    global modbus_client, last_connection_attempt
+    
     while modbus_running:
-
         if selected_port is None:
             time.sleep(1)
             continue
-        
+
         try:
             if modbus_client is None:
                 modbus_client = ModbusClient(
@@ -172,74 +177,31 @@ def modbus_worker():
                 )
                 modbus_client.connect()
 
-            for sid in active_slaves:
-                read_device(modbus_client, sid)
+            if modbus_client.connected:
+                for sid in list(active_slaves):
+                    with modbus_lock:
+                        read_device(modbus_client, sid)
 
-        except Exception:
-            if modbus_client:
-                try:
-                    modbus_client.close()
-                except:
-                    pass
+        except Exception as e:
+            print(f"[WORKER] {e}")
+
+            try:
+                modbus_client.close()
+            except:
+                pass
 
             modbus_client = None
-            time.sleep(1)
 
         time.sleep(REFRESH_INTERVAL)
 
-# def modbus_read_config(slave_id: int, num_regs: int):
-#     client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
-#                           parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
-#                           timeout=TIMEOUT)
-#     try:
-#         if not client.connect():
-#             return False, "Connexion impossible"
-
-#         resp = client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
-#         if resp.isError():
-#             return False, str(resp)
-
-#         regs = resp.registers
-#         hex_bytes = []
-#         for val in regs:
-#             hex_bytes.append(f"{(val >> 8) & 0xFF:02X}")
-#             hex_bytes.append(f"{val & 0xFF:02X}")
-
-#         return True, ' '.join(hex_bytes)
-
-#     except Exception as e:
-#         return False, str(e)
-#     finally:
-#         client.close()
 
 def modbus_read_config(slave_id: int, num_regs: int):
     global modbus_client
     if modbus_client is None or not modbus_client.connected:
-        # pas de client worker dispo pyro non connecté
-        # client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
-        #                       parity=PARITY, stopbits=STOPBITS,
-        #                       bytesize=BYTESIZE, timeout=TIMEOUT)
-        # try:
-        #     if not client.connect():
-        #         return False, "Connexion impossible"
-        #     resp = client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
-        #     if resp.isError():
-        #         return False, str(resp)
-        #     regs = resp.registers
-        #     hex_str = ' '.join(f"{(v>>8)&0xFF:02X}{v&0xFF:02X}" for v in regs)
-        #     return True, hex_str
-        # finally:
-        #     client.close()
         return False, "Connexion impossible"
     else:
         # Utilise le client du worker si disponible
         try:
-            # resp = modbus_client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
-            # if resp.isError():
-            #     return False, str(resp)
-            # regs = resp.registers
-            # hex_str = ' '.join(f"{(v>>8)&0xFF:02X}{v&0xFF:02X}" for v in regs)
-            # return True, hex_str
             resp = modbus_client.read_holding_registers(CONFIG_START_REG, count=num_regs, device_id=slave_id)
             if resp.isError():
                 return False, str(resp)
@@ -252,18 +214,11 @@ def modbus_read_config(slave_id: int, num_regs: int):
                 octets.append(f"{val & 0xFF:02X}")
                 octets.append(f"{(val >> 8) & 0xFF:02X}")
                 
-
             # Création des blocs de 4 octets avec tiret entre le 1er et le 2ème
             blocks = []
             for i in range(0, len(octets)-6, 4):
                 if i + 3 < len(octets):
                     block = f"{octets[i]}-{octets[i+1]}{octets[i+2]}{octets[i+3]}"
-                # elif i + 2 < len(octets):
-                #     block = f"{octets[i]}-{octets[i+1]}{octets[i+2]}"
-                # elif i + 1 < len(octets):
-                #     block = f"{octets[i]}-{octets[i+1]}"
-                # else:
-                #     block = octets[i]
                 blocks.append(block)
             i = i + 4
             block = f"{octets[i]}{octets[i+1]}-{octets[i+2]}{octets[i+3]}{octets[i+4]}{octets[i+5]}"
@@ -272,96 +227,60 @@ def modbus_read_config(slave_id: int, num_regs: int):
             formatted = ' '.join(blocks)
 
             return True, formatted
-            # regs = resp.registers
-            # hex_bytes = []
-            # for val in regs:
-            #     hex_bytes.append(f"{(val >> 8) & 0xFF:02X}")
-            #     hex_bytes.append(f"{val & 0xFF:02X}")
-
-            # # Création des blocs de 4 octets
-            # blocks = []
-            # for i in range(0, len(hex_bytes), 4):
-            #     if i==1:
-            #         block = '-'.join(hex_bytes[i:i+4])
-            #     else:
-            #         block = ''.join(hex_bytes[i:i+4])
-            #     blocks.append(block)
-
-            # # On sépare les blocs par un espace plus large
-            # formatted = ' '.join(blocks)
-
-            # return True, formatted
+            
         except Exception as e:
             return False, str(e)
-        
-# async def modbus_write_config(slave_id: int, hex_string: str):
-#     cleaned = re.sub(r'[^0-9A-Fa-f]', '', hex_string.upper())
-#     if not cleaned or len(cleaned) % 2 != 0:
-#         return False, "Longueur hex invalide (doit être paire)"
 
-#     try:
-#         bytes_data = bytes.fromhex(cleaned)
-#         values = []
-#         for i in range(0, len(bytes_data), 2):
-#             hi = bytes_data[i]
-#             lo = bytes_data[i + 1] if i + 1 < len(bytes_data) else 0
-#             values.append((hi << 8) | lo)
-
-#         client = ModbusClient(method='rtu', port=selected_port, baudrate=BAUDRATE,
-#                               parity=PARITY, stopbits=STOPBITS, bytesize=BYTESIZE,
-#                               timeout=TIMEOUT)
-#         try:
-#             if not client.connect():
-#                 return False, "Connexion impossible"
-
-#             result = client.write_registers(CONFIG_START_REG, values, slave=slave_id)
-#             if result.isError():
-#                 return False, str(result)
-#             return True, f"{len(values)} registres écrits"
-#         finally:
-#             client.close()
-
-#     except Exception as e:
-#         return False, str(e)
 
 async def modbus_write_config(slave_id: int, hex_string: str):
     global modbus_client
-    cleaned = re.sub(r'[^0-9A-Fa-f]', '', hex_string.upper())
-    if not cleaned or len(cleaned) % 2 != 0:
-        return False, "Longueur hex invalide"
+    
+    # print(f"[WRITE] Début envoi vers slave {slave_id} | Données brutes: '{hex_string}'")
+    
+    if modbus_client is None:
+        # print("[WRITE] modbus_client is none")
+        return False, "Connexion impossible" 
+    elif modbus_client.connected == False:
+        # print("[WRITE] modbus_client not connected")
+        return False, "Connexion impossible"    
+    else:
 
-    try:
-        bytes_data = bytes.fromhex(cleaned)
-        values = []
-        for i in range(0, len(bytes_data), 2):
-            hi = bytes_data[i]
-            lo = bytes_data[i + 1] if i + 1 < len(bytes_data) else 0
-            values.append((hi << 8) | lo)
+        if not hex_string or not isinstance(hex_string, str):
+            # print("[WRITE] ERREUR: hex_string est vide ou None")
+            return False, "Aucune donnée à envoyer"
 
-        # Priorité au client du worker s'il est connecté
-        if modbus_client and modbus_client.connected:
-            client = modbus_client
-            close_after = False
-        else:
-            client = ModbusClient(port=selected_port, baudrate=BAUDRATE,
-                                  parity=PARITY, stopbits=STOPBITS,
-                                  bytesize=BYTESIZE, timeout=TIMEOUT)
-            if not client.connect():
-                return False, "Connexion impossible"
-            close_after = True
+        cleaned = re.sub(r'[^0-9A-Fa-f]', '', hex_string.upper().strip())
+        # print(f"[WRITE] Données nettoyées: {cleaned} ({len(cleaned)} caractères)")
+        if not cleaned or len(cleaned) % 2 != 0:
+            # print("[WRITE] ERREUR: Longueur invalide")
+            return False, "Données hex invalides"
 
         try:
-            result = client.write_registers(CONFIG_START_REG, values, slave=slave_id)
-            if result.isError():
-                return False, str(result)
-            return True, f"{len(values)} registres écrits"
-        finally:
-            if close_after and client:
-                client.close()
+            bytes_data = bytes.fromhex(cleaned)
+            values = []
+            for i in range(0, len(bytes_data), 2):
+                hi = bytes_data[i]
+                lo = bytes_data[i + 1] if i + 1 < len(bytes_data) else 0
+                values.append((lo << 8) | hi)
 
-    except Exception as e:
-        return False, str(e)
-    
+            # print(f"[WRITE] {len(values)} registres à écrire → {values}")
+            with modbus_lock:
+
+                modbus_client.write_registers(
+                    CONFIG_START_REG,
+                    values,
+                    device_id=slave_id,
+                    no_response_expected=True
+                )
+                await asyncio.sleep(0.5)
+            
+            # print(f"[WRITE] Succès sur slave {slave_id}")
+            return True, f"{len(values)} registres écrits avec succès"
+            
+        except Exception as e:
+            # print(f"[WRITE] EXCEPTION: {type(e).__name__} - {e}")
+            return False, f"Exception: {str(e)}"
+
 # ────────────────────────────────────────────────
 # UTILITAIRES HEX
 # ────────────────────────────────────────────────
@@ -513,7 +432,7 @@ async def main_page():
                         send_inp = ui.input(
                             placeholder='ex: 01 02 A3 FF',
                             label='Sequence à envoyer'
-                        ).classes('flex-grow').props('outlined clearable')
+                        ).classes('w-full font-mono text-lg bg-zinc-950').props('outlined clearable')
 
                         async def paste_to_send():
                             try:
@@ -528,27 +447,31 @@ async def main_page():
                             .props('flat dense').classes('px-4')
 
                     def on_send_change():
+                        if send_inp.value is None:
+                            return
                         formatted = format_hex(send_inp.value)
                         if formatted != send_inp.value:
                             send_inp.value = formatted
                         valid = is_valid_hex(send_inp.value)
-                        send_inp.classes(replace='border-red-500' if not valid and send_inp.value else 'border-green-500' if valid and send_inp.value else '')
+                        send_inp.classes(
+                            remove='border-red-500 border-green-500'
+                        )
+
+                        if send_inp.value:
+                            send_inp.classes(
+                                add='border-green-500' if valid
+                                else 'border-red-500'
+                            )
 
                     send_inp.on('update:model-value', on_send_change)
                     send_inputs[dev_idx] = send_inp
-
-                    # # Champ LECTURE
-                    # read_out = ui.input(
-                    #     label='Config lue'#,
-                    #     #readonly=True
-                    # ).classes('mt-3').props('outlined filled')
                     
                     # Champ LECTURE - Version améliorée pour 55 registres
                     ui.label('Sequence lue').classes('text-lg text-gray-400 mt-6 mb-2')
                     read_out = ui.textarea(
                         label='',
                         placeholder='Les données hex apparaîtront ici...'
-                    ).classes('w-full h-64 font-mono text-lg bg-zinc-950').props('outlined readonly')   
+                    ).classes('w-full font-mono text-lg bg-zinc-950').props('outlined readonly')   
 
                     read_outputs[dev_idx] = read_out
 
@@ -558,10 +481,18 @@ async def main_page():
                     # Boutons
                     with ui.row().classes('gap-3 mt-4 w-full'):
                         async def send_action(dev_id=dev_idx):
+                            # Protection renforcée
+                            if dev_id not in send_inputs or send_inputs[dev_id].value is None:
+                                ui.notify('Champ vide ou invalide', type='warning')
+                                return
                             val = send_inputs[dev_id].value.strip()
                             if not val:
                                 ui.notify('Rien à envoyer', type='warning')
                                 return
+                            # Feedback immédiat
+                            status_labels[dev_id].text = 'Envoi en cours...'
+                            status_labels[dev_id].classes(replace='text-amber-600')
+                            
                             success, msg = await modbus_write_config(SLAVE_IDS[dev_id-1], val)
                             if success:
                                 ui.notify(msg, type='positive')

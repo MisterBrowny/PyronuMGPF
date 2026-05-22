@@ -99,7 +99,16 @@ void check_idtest (void)
 		ecran_prog();
 		st7567s_refresh();
 
-		while(true)	{cf_rcv();}
+		Micro.Phase = MICRO_PROG;
+
+		eeprom_read_array(&Cf.MemoData[0], 0, CF_SIZE);
+		memcpy((uint8_t *) &Modbus.state.config[0], Cf.MemoData, CF_SIZE);
+
+		while(true)	
+		{
+			modbus_refresh();
+			cf_rcv();
+		}
 	}
 }
 
@@ -120,7 +129,6 @@ void check_bpon (void)
 void check_UAlim (void)
 {
 	uint32_t 	temp = 0;
-	char 		temp_tab[5] = {0};
 	char 		string_test[25];
 
 	temp = analogReadMilliVolts(U_TEST_1A_ADC);
@@ -154,8 +162,8 @@ uint32_t check_UInfla (void)
 	// Déplacer en début de test INFLA
 	//digitalWrite(LOAD_TEST_20mA, HIGH);
 	
-	//temp = analogReadMilliVolts(U_TEST_INF);
-	temp = moy_analog(U_TEST_INF, DefNbMesureINFLA);
+	//temp = analogReadMilliVolts(U_TEST_INF_ADC);
+	temp = moy_analog(U_TEST_INF_ADC, DefNbMesureINFLA);
 
 	// Déplacer en début de test INFLA
 	//digitalWrite(LOAD_TEST_20mA, LOW);

@@ -144,15 +144,75 @@ void cf_check_and_display (void)
 	}
 }
 
-// TODO CF_RCV
+
 void cf_rcv (void)
 {
 	byte i, temp = false;
+
 	
+
 	if (TempsSup(Cf.Time2,TDef100ms))
 	{
-		//SERIAL_DEBUG("Cf receives timeout");
+		if (memcmp(Modbus.state.config, Cf.MemoData, CF_SIZE) != 0)
+		{
+			char string_test[100];
 
+			SERIAL_DEBUG("Cf rcv from MODBUS");
+
+			eeprom_read_array(&Cf.Data[0], 0, CF_SIZE);		// Read config
+
+			sprintf(string_test, "EepSeq=%02X%02X%02X%02X", Cf.Data[OFFSET_CHECKSUM_1], Cf.Data[OFFSET_CHECKSUM_2], Cf.Data[OFFSET_CHECKSUM_3], Cf.Data[OFFSET_CHECKSUM_4]);
+			SERIAL_DEBUG(string_test);
+			
+			memcpy(Cf.MemoData, Modbus.state.config, CF_SIZE);
+			memcpy(Cf.Data, Modbus.state.config, CF_SIZE);
+
+			sprintf(string_test, "RcvSeq=%02X%02X%02X%02X", Cf.Data[OFFSET_CHECKSUM_1], Cf.Data[OFFSET_CHECKSUM_2], Cf.Data[OFFSET_CHECKSUM_3], Cf.Data[OFFSET_CHECKSUM_4]);
+			SERIAL_DEBUG(string_test);
+				
+			temp = cf_check();
+
+			if (temp == false)
+			{// config nok
+				SERIAL_DEBUG("Cf rcv from MODBUS not ok");
+				eeprom_read_array(&Cf.MemoData[0], 0, CF_SIZE);		// Read config
+				memcpy(Modbus.state.config, Cf.MemoData, CF_SIZE);
+				ecran_erreur_conf();
+			}
+			else
+			{// config ok
+				SERIAL_DEBUG("Cf OK from MODBUS, write to eeprom ...");
+
+				eeprom_write_array(&Cf.Data[0], 0, CF_SIZE);	// Write config
+
+				SERIAL_DEBUG("CF written to eeprom");
+
+				for (i = 0; i < CF_SIZE; i ++)					// Raz config
+				{
+					Cf.Data[i] = 0;
+				}
+
+				eeprom_read_array(&Cf.Data[0], 0, CF_SIZE);		// Read config
+
+				SERIAL_DEBUG("CF read from eeprom");
+				
+				temp = cf_check();								// 2éme check config
+
+				if (temp == false)
+				{// ecriture eeprom nok
+					ecran_erreur_eepr();
+					SERIAL_DEBUG("CF verified in eeprom KO");
+				}
+				else
+				{// ecriture eeprom ok
+					ecran_write_ok();
+					memcpy(Modbus.state.config, Cf.Data, CF_SIZE);
+					SERIAL_DEBUG("CF verified in eeprom OK");
+				}
+			}
+			st7567s_refresh();
+		}		
+		
 		Cf.Time2 = millis();
 
 		if (TempsSup(Cf.Time1, TDef100ms)) {Cf.Index = 0;}// Rx time out
@@ -180,10 +240,10 @@ void cf_rcv (void)
 				Cf.Data[i] = 0;
 			}
 
-			SERIAL_DEBUG("CF written to eeprom");
-
 			eeprom_read_array(&Cf.Data[0], 0, CF_SIZE);		// Read config
 
+			SERIAL_DEBUG("CF read from eeprom");
+			
 			temp = cf_check();								// 2éme check config
 
 			if (temp == false)
@@ -194,6 +254,7 @@ void cf_rcv (void)
 			else
 			{// ecriture eeprom ok
 				ecran_write_ok();
+				memcpy(Modbus.state.config, Cf.Data, CF_SIZE);
 				SERIAL_DEBUG("CF verified in eeprom OK");
 			}
 		}

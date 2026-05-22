@@ -7,7 +7,7 @@ void arm_UAlim_1A (bool print)
 	int 	temp = 0;
 	char 	temp_tab[5] = {0};
 	char	result[10];
-	char 		string_test[25];
+	char 	string_test[25];
 
 	// On s'assure que la sécu puissance est inactive
 	// SECU_PUISSANCE fait un ET LOGIQUE avec NB_AT

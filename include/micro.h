@@ -18,6 +18,7 @@
 #define MICRO_TEST		0x01
 #define MICRO_ARM		0x02
 #define MICRO_FEU		0x03
+#define MICRO_PROG		0x04
 
 // Micro->Step
 #define MICRO_STEP_1	0x00

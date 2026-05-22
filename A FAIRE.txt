@@ -1,28 +1,15 @@
 TODO
 
 
-19/ Ajouter un état PROG 
-  => c'est seulement dans cet état que la rubrique config devrait pouvoir s'écrire.
-  
-  if (Micro.State == STOP)
-   global_state = MODBUS_STATE_GO; // TODO estce ok ? NON
-    => ajout d'un etat STOP 
-    => ajout d'un etat BREAK
 
+46/ mettre la couleur des  onglets en fonction de l'état du boitier
 
-20/
-  Dans l'état TEST et ARMED affiché le test INFLA
-  Dans l'état GO et END affiché les lignes tirées 
-    PRET / TIRER 11
-    0b00 "-", 0b01: "DEFAULT", 0b10: "PRET", 0b11: "TIRER" 
-    0b00 "ABSENT", 0b01: "KO", 0b10: "MOYEN", 0b11: "OK" 
-    ajouter un troisième état TIRER
+42/ sur l'écran BP_ON | BP_TEST dans le choix 
 
-
-16/ Chargement par bus 
- => a rendre uniquement possible en mode programmation
- => s'affrannchir des espace et tirer => OK
-
+45/ changer les lignes 1-8 CL1 en bas 9-16 CL2 en haut
+  - dans le supervisor
+  - sur l'écran
+  - dans les pilotages TIR et TEST
 
 33/ LED RGB
 Quelles sont les idées pour piloter les led ?
@@ -35,10 +22,31 @@ pause rouge END
 End bleu fixe
 Armed chenillard rouge
 
-
-41/ Supervisor recompilé en /onedir au lieu de /onefile
-
 42/ revoir les messages affichés sur écran
+  => afficher appuyer pendant 3 seconde sur BP_ON
+
+20/  Dans l'état TEST et ARMED affiché le test INFLA
+  Dans l'état GO et END affiché les lignes tirées 
+    PRET / TIRER 11
+    0b00 "-", 0b01: "DEFAULT", 0b10: "PRET", 0b11: "TIRER" 
+    0b00 "ABSENT", 0b01: "KO", 0b10: "MOYEN", 0b11: "OK" 
+    ajouter un troisième état TIRER
+
+40/ Afficher état NB_AT sur le supervisor
+void check_NB_AT (byte State)
+{
+// TODO	
+	if (State == LOW)
+	{// Si NB_AT est à l'état bas, AT est inactif => boucle while (pas de tir possible)
+	}
+	else if (State == HIGH)
+	{// Si NB_AT est inactif => boucle while 
+	}
+}
+
+
+
+
 
 _________________________
 QUESTIONS
@@ -51,14 +59,3 @@ _________________________
 
 38/ On pourrait détecter une ligne présente / cablée alors qu'elle n'est pas active dans la config
 
-
-40/ void check_NB_AT (byte State)
-{
-// TODO	
-	if (State == LOW)
-	{// Si NB_AT est à l'état bas, AT est inactif => boucle while (pas de tir possible)
-	}
-	else if (State == HIGH)
-	{// Si NB_AT est inactif => boucle while 
-	}
-}

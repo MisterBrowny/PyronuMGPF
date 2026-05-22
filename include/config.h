@@ -17,6 +17,7 @@
 
 typedef struct StructConfig {
 	uint8_t					Data[CF_SIZE]; // NB_TIR * CF_SECTOR_SIZE  + NB_PAUSE_MAX * CF_SECTOR_SIZE + CF_CONTROL_SIZE
+	uint8_t					MemoData[CF_SIZE]; // NB_TIR * CF_SECTOR_SIZE  + NB_PAUSE_MAX * CF_SECTOR_SIZE + CF_CONTROL_SIZE
 	volatile uint8_t		Index;
 	volatile unsigned long	Time1;
 	unsigned long 			Time2;

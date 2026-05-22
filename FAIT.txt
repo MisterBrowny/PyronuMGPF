@@ -171,3 +171,25 @@ clignote celui qui est pas sélectionné
 
 6/ Si on part COMU_ON on arme en appuyant lontempgs >3 secondes sur BP_ON => OK
 et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le bouton ARMER pour armer le PyronuMGPF" => PAS FAIT
+
+
+19/ Ajouter des état boitiers : => FAIT PROG / STOP / PAUSE
+
+19.1/ un état PROG 
+  => c'est seulement dans cet état que la rubrique config devrait pouvoir s'écrire.
+  
+  if (Micro.State == STOP)
+   global_state = MODBUS_STATE_GO; // TODO estce ok ? NON
+    => ajout d'un etat STOP 
+    => ajout d'un etat BREAK
+
+43/ Afficher START/STOP/PAUSE sur le supervisor => FAIT TESTER que PROG
+
+16/ Chargement par bus => FAIT
+ => a rendre uniquement possible en mode programmation => FAIT en mode PROG seulement
+ => s'affrannchir des espace et tirer => OK
+
+ 
+41/ Supervisor recompilé en /onedir au lieu de /onefile => on compile les deux pour l'instant
+
+44/ Affiché ARMED sur Supervisor que si le boitier est armée => FAIT
