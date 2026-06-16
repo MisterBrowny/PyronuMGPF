@@ -42,6 +42,9 @@ STOPBITS = 1
 BYTESIZE = 8
 TIMEOUT = 0.06
 
+REFRESH_INTERVAL = 0
+
+# PYRO MODBUS REGISTER
 NUM_DEVICES = 20
 NUM_ANALOG_INPUTS = 16
 
@@ -54,8 +57,6 @@ CONFIG_NUM_REGS    = 55      # ← À CHANGER : combien de registres lire/écrir
 
 SLAVE_IDS = list(range(1, NUM_DEVICES + 1))
 active_slaves = set(SLAVE_IDS)
-
-REFRESH_INTERVAL = 0
 
 GLOBAL_MAP = {
     0: ("DECO",  "text-3xl text-red-700 font-bold"), # PAS UTILS ?
@@ -100,6 +101,81 @@ device_states = {
     for i in SLAVE_IDS
 }
 
+# BATTERY MODBUS REGISTER
+BATTERY_START_REG = 0
+NUM_BAT_CELLS = 8
+
+BATTERY_REG_COUNT = 10
+
+BATTERY_IDS = list(range(200, 221))
+
+BATTERY_STATE_MAP = {
+    0: ('DISCONNECT', 'text-red-700 font-bold'),
+    1: ('LOW VOLTAGE', 'text-orange-600 font-bold'),
+    2: ('MEDIUM VOLTAGE', 'text-yellow-500 font-bold'),
+    3: ('HIGH VOLTAGE', 'text-green-600 font-bold'),
+}
+
+DEFAULT_BATTERY_STATE = (
+    'UNKNOWN',
+    'text-gray-500 font-bold'
+)
+
+battery_states = {
+    i: {
+        "global": DEFAULT_GLOBAL,
+        "pack": DEFAULT_ALIM,
+        "cell": [DEFAULT_ALIM] * NUM_BAT_CELLS,
+        "no_refresh": True,
+        "disconnected": False,
+        "last_request": DEFAULT_TIME,
+        "last_response": DEFAULT_TIME,
+    }
+    for i in BATTERY_IDS
+}
+
+# =========================================================
+# ONGLETS PYRO + BATTERIES AVEC COULEURS DYNAMIQUES
+# =========================================================
+
+# stockage références onglets
+pyro_tabs = {}
+battery_tabs_dict = {}
+
+# état actuel des couleurs
+pyro_tab_states = {}
+battery_tab_states = {}
+
+# =========================================================
+# MAPPING COULEURS
+# =========================================================
+
+PYRO_TAB_COLORS = {
+    'DECO': 'bg-gray-700 text-white',
+    'END': 'bg-yellow-700 text-white',
+    'GO': 'bg-red-600 text-white',
+    'ARMED': 'bg-orange-500 text-white',
+    'TEST': 'bg-green-600 text-white',
+    'PROG': 'bg-sky-800 text-white',
+    'STOP': 'bg-orange-400 text-white',
+    'PAUSE': 'bg-orange-300 text-white'
+}
+
+BATTERY_TAB_COLORS = {
+    'DISCONNECT': 'bg-gray-700 text-white',
+    'LOW VOLTAGE': 'bg-red-900 text-white',
+    'MEDIUM VOLTAGE': 'bg-yellow-600 text-black',
+    'HIGH VOLTAGE': 'bg-green-700 text-white',
+    'UNKNOWN': 'bg-gray-700 text-white',
+}
+
+ALL_TAB_CLASSES = (
+    'bg-red-700 bg-yellow-700 bg-orange-600 '
+    'bg-green-700 bg-blue-700 bg-gray-700 '
+    'bg-red-900 bg-orange-700 bg-yellow-600 '
+    'text-white text-black'
+)
+
 modbus_client = None
 modbus_running = True
 modbus_polling = True
@@ -110,7 +186,7 @@ modbus_lock = threading.Lock()
 # FONCTIONS MODBUS
 # ────────────────────────────────────────────────
 
-def read_device(client, sid):
+def modbus_read_pyro(client, sid):
 
     try:
         device_states[sid]["last_request"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
@@ -155,6 +231,45 @@ def read_device(client, sid):
         device_states[sid]["no_refresh"] = False
         device_states[sid]["disconnected"] = True
 
+def modbus_read_battery(client, sid):
+
+    try:
+        battery_states[sid]["last_request"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
+
+        resp = client.read_holding_registers(
+            address=BATTERY_START_REG,
+            count=BATTERY_REG_COUNT,
+            device_id=sid
+        )
+
+        if resp.isError():
+            battery_states[sid]["no_refresh"] = False
+            battery_states[sid]["disconnected"] = True
+            return
+
+        regs = resp.registers
+
+        bat_val = regs[0] & 0xFF
+        bat_state = BATTERY_STATE_MAP.get(bat_val, DEFAULT_BATTERY_STATE)
+
+        pack_voltage = regs[1]
+        cell_voltages = regs[2:10]
+
+        battery_states[sid]["global"] = bat_state
+        battery_states[sid]["pack"] = pack_voltage
+        battery_states[sid]["cell"] = cell_voltages
+        battery_states[sid]["no_refresh"] = False
+        battery_states[sid]["disconnected"] = False
+        battery_states[sid]["last_response"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
+
+    except Exception:
+        battery_states[sid]["no_refresh"] = False
+        battery_states[sid]["disconnected"] = True
+
+    # except Exception as e:
+        # print(f'[BAT {sid}] {e}')
+        # return None
+    
 def modbus_worker():
 
     global modbus_client, last_connection_attempt
@@ -180,7 +295,11 @@ def modbus_worker():
             if modbus_client.connected:
                 for sid in list(active_slaves):
                     with modbus_lock:
-                        read_device(modbus_client, sid)
+                        modbus_read_pyro(modbus_client, sid)
+                
+                for sid in BATTERY_IDS:
+                    with modbus_lock:
+                        modbus_read_battery(modbus_client, sid)
 
         except Exception as e:
             print(f"[WORKER] {e}")
@@ -313,7 +432,27 @@ def toggle_all_slave(e):
             active_slaves.discard(sid)
             device_states[sid]["no_refresh"] = True
 
+# =========================================================
+# FONCTIONS MAJ COULEURS ONGLETS
+# =========================================================
 
+def update_pyro_tab_color(sid, state):
+    if pyro_tab_states[sid] == state:
+        return
+
+    pyro_tab_states[sid] = state
+    color = PYRO_TAB_COLORS.get(state, 'bg-gray-700 text-white')
+    pyro_tabs[sid].classes(remove=ALL_TAB_CLASSES)
+    pyro_tabs[sid].classes(add=f'{color} rounded-xl shadow font-bold')
+
+def update_battery_tab_color(sid, state):
+    if battery_tab_states[sid] == state:
+        return
+
+    battery_tab_states[sid] = state
+    color = BATTERY_TAB_COLORS.get(state, 'bg-gray-700 text-white')
+    battery_tabs_dict[sid].classes(remove=ALL_TAB_CLASSES)
+    battery_tabs_dict[sid].classes(add=f'{color} rounded-xl shadow font-bold')
 
 @ui.page('/')
 
@@ -355,13 +494,33 @@ async def main_page():
 
     
     # ==================== Création des onglets ====================
-    with ui.tabs().classes('w-full text-3xl') as tabs:
-        tab_list = []
-        for dev in range(1, NUM_DEVICES + 1):
-            sid = SLAVE_IDS[dev - 1]
-            tab_list.append(ui.tab(f'PYRO {sid:02d}'))
+    # with ui.tabs().classes('w-full text-3xl') as tabs:
+    #     tab_list = []
+    #     for dev in range(1, NUM_DEVICES + 1):
+    #         sid = SLAVE_IDS[dev - 1]
+    #         tab_list.append(ui.tab(f'PYRO {sid:02d}'))
 
-    with ui.tab_panels(tabs, value=tab_list[0]).classes('w-full mx-auto shadow-lg rounded-xl px-4'):
+    # =========================================================
+    # CREATION ONGLETS PYRO
+    # =========================================================
+
+    with ui.tabs().classes('w-full text-lg') as pyro_tabs_bar:
+        pyro_tab_list = []
+
+        for sid in SLAVE_IDS:
+            tab = ui.tab(f'PYRO {sid:02d}') \
+                .classes(
+                    'rounded-xl shadow font-bold transition-all duration-300'
+                )
+            pyro_tabs[sid] = tab
+            pyro_tab_states[sid] = 'INIT'
+            pyro_tab_list.append(tab)
+
+    # =========================================================
+    # PANELS PYRO
+    # =========================================================
+
+    with ui.tab_panels(pyro_tabs_bar, value=pyro_tab_list[0]).classes('w-full mx-auto shadow-lg rounded-xl px-4'):
         global_labels = {}
         analog_labels = {}
         alim_labels = {}
@@ -374,7 +533,7 @@ async def main_page():
         memo_labels = {}
         memo_state = {}
 
-        for dev_idx, tab in enumerate(tab_list, start=1):
+        for dev_idx, tab in enumerate(pyro_tab_list, start=1):
             sid = SLAVE_IDS[dev_idx - 1]
 
             with ui.tab_panel(tab):
@@ -526,6 +685,88 @@ async def main_page():
 
                         ui.button('Lire config', on_click=read_action, color='indigo')\
                             .props('outline push').classes('flex-grow')
+    
+    # =========================================================
+    # BATTERIES
+    # =========================================================
+    battery_state_labels = {}
+    battery_pack_labels = {}
+    battery_cell_labels = {}
+
+    battery_tabs_bar = {}
+
+    # =========================================================
+    # ONGLETS BATTERIES
+    # =========================================================
+
+    with ui.tabs().classes('w-full text-lg mt-8') as battery_tabs_bar:
+        battery_tab_list = []
+        for sid in BATTERY_IDS:
+            tab = ui.tab(f'PILE {sid}') \
+                .classes(
+                    'rounded-xl shadow font-bold transition-all duration-300'
+                )
+            battery_tabs_dict[sid] = tab
+            battery_tab_states[sid] = 'UNKNOWN'
+            battery_tab_list.append(tab)
+    
+    # =========================================================
+    # PANELS BATTERIES
+    # =========================================================
+    with ui.tab_panels(battery_tabs_bar, value=battery_tab_list[0]).classes('w-full shadow-lg rounded-xl'):
+        last_request_batt = {}
+        last_response_batt = {}
+
+        for sid, tab in zip(BATTERY_IDS, battery_tab_list):
+            with ui.tab_panel(tab):
+                with ui.card().classes('w-full'):
+                    ui.label(f'Battery {sid}').classes('text-4xl font-bold mb-4')
+
+                    # =====================================================
+                    # ETAT GLOBAL
+                    # =====================================================
+
+                    with ui.row().classes('items-center gap-4 mb-4'):
+                        ui.label('État :').classes('text-2xl')
+                        lbl = ui.label('---').classes('text-3xl font-bold')
+                        battery_state_labels[sid] = lbl
+
+                    # =====================================================
+                    # TENSION PACK
+                    # =====================================================
+
+                    with ui.row().classes('items-center gap-4 mb-6'):
+                        ui.label('Tension pack :').classes('text-2xl')
+                        lbl = ui.label('--- mV').classes('text-3xl font-bold')
+                        battery_pack_labels[sid] = lbl
+
+                    ui.separator()
+
+                    # =====================================================
+                    # TENSIONS CELLULES
+                    # =====================================================
+
+                    ui.label('Tensions cellules').classes('text-2xl mt-6 mb-4')
+
+                    cell_labels = []
+
+                    with ui.grid(columns=4).classes('w-full gap-4'):
+
+                        for i in range(NUM_BAT_CELLS):
+                            with ui.card().classes('items-center bg-zinc-800 p-3 rounded-xl'):
+                                ui.label(f'CELL {i + 1:02d}').classes('text-white text-lg')
+                                lbl = ui.label('--- mV').classes('text-2xl font-mono')
+                                cell_labels.append(lbl)
+
+                    battery_cell_labels[sid] = cell_labels
+
+                    with ui.row().classes('items-center w-full'):
+                        ui.label('Last request time: ').classes('text-base text-gray-500 mt-0 italic text-center')
+                        last_request_batt[sid] = ui.label('never').classes('text-base text-gray-500 mt-0 italic text-center')
+                    with ui.row().classes('items-center w-full'):
+                        ui.label('Last response time: ').classes('text-base text-gray-500 mt-0 italic text-center')
+                        last_response_batt[sid] = ui.label('never').classes('text-base text-gray-500 mt-0 italic text-center')
+                    
 
     ui.separator()
     ui.label("Accès smartphone :")
@@ -565,6 +806,8 @@ async def main_page():
             global_labels[sid].text = txt
             global_labels[sid].classes(replace=cls)
 
+            update_pyro_tab_color(sid, txt)
+
             for i, (txt, cls) in enumerate(state["analogs"]):
 
                 analog_labels[sid][i].text = txt
@@ -572,7 +815,49 @@ async def main_page():
  
             alim_labels[sid].text = state["alim"]
             alim_1A_labels[sid].text = state["alim_1A"]
- 
+
+        for sid in BATTERY_IDS:
+            # if sid not in active_slaves:
+            #     if memo_state[sid] == False:
+            #         memo_state[sid] = True
+            #         memo_labels[sid] = global_labels[sid].text
+
+            #     global_labels[sid].text = memo_labels[sid] + " (not refreshed)"
+            #     global_labels[sid].classes(replace='text-3xl text-gray-600')
+            #     continue
+            # else:
+            #     memo_state[sid] = False
+
+            state = battery_states[sid]
+
+            txt, cls = state["last_request"]
+            last_request_batt[sid].text = txt
+            last_request_batt[sid].classes(replace=cls)
+
+            txt, cls = state["last_response"]
+            last_response_batt[sid].text = txt
+            last_response_batt[sid].classes(replace=cls)
+            
+            if state["disconnected"]:
+
+                battery_state_labels[sid].text = "DISCONNECTED"
+                battery_state_labels[sid].classes(replace='text-3xl text-red-600 animate-pulse')
+                continue
+
+            txt, cls = state["global"]
+
+            battery_state_labels[sid].text = txt
+            battery_state_labels[sid].classes(replace=cls)
+
+            update_battery_tab_color(sid, txt)
+
+            battery_pack_labels[sid].text = f'{state["pack"]} mV'
+
+            for i, txt in enumerate(state["cell"]):
+                battery_cell_labels[sid][i].text = f'{txt} mV'
+
+            
+
     ui.timer(0.5, refresh_ui)
 
     async def close_app():
