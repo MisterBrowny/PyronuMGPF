@@ -20,6 +20,8 @@ import os
 import threading
 import socket
 
+from collections import deque
+
 hostname = socket.gethostname()
 ip = socket.gethostbyname(hostname)
 
@@ -103,17 +105,28 @@ device_states = {
 
 # BATTERY MODBUS REGISTER
 BATTERY_START_REG = 0
-NUM_BAT_CELLS = 8
+LIST_BAT_CELLS = {
+    0: "CELL 1 & 2",
+    1: "CELL 3",
+    2: "CELL 4",
+    3: "CELL 5 & 6",
+    4: "CELL 7",
+    5: "CELL 8",
+    6: "CELL 9",
+    7: "CELL 10",
+}
+NUM_BAT_CELLS = len(LIST_BAT_CELLS)
+HISTORY_SIZE = 300  # environ 5 min à 1 échantillon/s
 
 BATTERY_REG_COUNT = 10
 
 BATTERY_IDS = list(range(200, 221))
 
 BATTERY_STATE_MAP = {
-    0: ('DISCONNECT', 'text-red-700 font-bold'),
-    1: ('LOW VOLTAGE', 'text-orange-600 font-bold'),
-    2: ('MEDIUM VOLTAGE', 'text-yellow-500 font-bold'),
-    3: ('HIGH VOLTAGE', 'text-green-600 font-bold'),
+    0: ('DISCONNECT', 'text-3xl text-red-700 font-bold'),
+    1: ('LOW BATTERY VOLTAGE', 'text-3xl text-red-900 font-bold'),
+    2: ('LOW CELL VOLTAGE', 'text-3xl text-orange-600 font-bold'),
+    3: ('NOMINAL VOLTAGE', 'text-3xl text-green-600 font-bold'),
 }
 
 DEFAULT_BATTERY_STATE = (
@@ -132,6 +145,14 @@ battery_states = {
         "last_response": DEFAULT_TIME,
     }
     for i in BATTERY_IDS
+}
+
+cell_history = {
+    sid: [
+        deque(maxlen=HISTORY_SIZE)
+        for _ in range(NUM_BAT_CELLS)
+    ]
+    for sid in BATTERY_IDS
 }
 
 # =========================================================
@@ -163,9 +184,9 @@ PYRO_TAB_COLORS = {
 
 BATTERY_TAB_COLORS = {
     'DISCONNECT': 'bg-gray-700 text-white',
-    'LOW VOLTAGE': 'bg-red-900 text-white',
-    'MEDIUM VOLTAGE': 'bg-yellow-600 text-black',
-    'HIGH VOLTAGE': 'bg-green-700 text-white',
+    'LOW BATTERY VOLTAGE': 'bg-red-900 text-white',
+    'LOW CELL VOLTAGE': 'bg-orange-600 text-white',
+    'NOMINAL VOLTAGE': 'bg-green-700 text-white',
     'UNKNOWN': 'bg-gray-700 text-white',
 }
 
@@ -752,11 +773,23 @@ async def main_page():
 
                     with ui.grid(columns=4).classes('w-full gap-4'):
 
-                        for i in range(NUM_BAT_CELLS):
+                        for label in LIST_BAT_CELLS.values():
                             with ui.card().classes('items-center bg-zinc-800 p-3 rounded-xl'):
-                                ui.label(f'CELL {i + 1:02d}').classes('text-white text-lg')
+                                ui.label(label).classes('text-white text-lg')
                                 lbl = ui.label('--- mV').classes('text-2xl font-mono')
                                 cell_labels.append(lbl)
+                        # for i in range(NUM_BAT_CELLS):
+                        #     with ui.card().classes('items-center bg-zinc-800 p-3 rounded-xl'):
+                        #         if i == 0:
+                        #             ui.label(f'CELL 1 & 2').classes('text-white text-lg')
+                        #         elif i < 3:
+                        #             ui.label(f'CELL {i + 2}').classes('text-white text-lg')
+                        #         elif i == 3:
+                        #             ui.label(f'CELL 5 & 6').classes('text-white text-lg')
+                        #         else:
+                        #             ui.label(f'CELL {i + 3}').classes('text-white text-lg')
+                        #         lbl = ui.label('--- mV').classes('text-2xl font-mono')
+                        #         cell_labels.append(lbl)
 
                     battery_cell_labels[sid] = cell_labels
 
@@ -766,7 +799,90 @@ async def main_page():
                     with ui.row().classes('items-center w-full'):
                         ui.label('Last response time: ').classes('text-base text-gray-500 mt-0 italic text-center')
                         last_response_batt[sid] = ui.label('never').classes('text-base text-gray-500 mt-0 italic text-center')
-                    
+    
+    with ui.card().classes('w-full mt-6'):
+        ui.label(
+            'Historique des cellules'
+        ).classes(
+            'text-2xl font-bold'
+        )
+
+        with ui.row().classes('gap-4 items-center'):
+
+            selected_battery = ui.select(
+                BATTERY_IDS,
+                value=BATTERY_IDS[0],
+                label='Pile'
+            ).classes('w-40')
+
+            selected_cell = ui.select(
+                options=LIST_BAT_CELLS,
+                value=0,
+                label='Cellule'
+            ).classes('w-40')                
+        
+        chart = ui.echart({
+            'title': {'text': ''},
+            'tooltip': {'trigger': 'axis'},
+            'xAxis': {
+                'type': 'category',
+                'data': [],
+            },
+            'yAxis': {
+                'type': 'value',
+                'name': 'mV',
+                'min': 2000,
+                'max': 4500,
+            },
+            'visualMap': {
+                'show': False,
+                'dimension': 1,
+                'pieces': [
+                    { 'lte': 2500, 'color': '#dc2626'},
+                    { 'gt': 2500, 'lte': 3000, 'color': '#f97316'},
+                    { 'gt': 3000, 'lte': 3300, 'color': '#eab308'},
+                    { 'gt': 3300, 'color': '#22c55e'}
+                ]
+            },
+            'series': [{
+                'name': 'Tension',
+                'type': 'line',
+                'smooth': True,
+                'data': [],
+                'markLine': {
+                    'silent': True,
+                    'data': [
+                        {
+                            'yAxis': 2500,
+                            'lineStyle': {
+                                'color': '#dc2626',
+                                'width': 2,
+                                'type': 'dashed'
+                            },
+                            'label': {'formatter': 'Seuil critique', 'color': '#ffffff'}
+                        },
+                        {   
+                            'yAxis': 3000,
+                            'lineStyle': {
+                                'color': '#f97316',
+                                'width': 2,
+                                'type': 'dashed'
+                            },
+                            'label': {'formatter': 'Seuil bas', 'color': '#ffffff'}
+                        },
+                        {   
+                            'yAxis': 3300,
+                            'lineStyle': {
+                                'color': '#22c55e',
+                                'width': 2,
+                                'type': 'dashed'
+                            },
+                            'label': {'formatter': 'Seuil moyen', 'color': '#ffffff'}
+                        }
+                    ]
+                }
+            }],
+        }).classes('w-full h-96')
 
     ui.separator()
     ui.label("Accès smartphone :")
@@ -796,13 +912,13 @@ async def main_page():
             last_response[sid].classes(replace=cls)
             
             if state["disconnected"]:
-
+ 
                 global_labels[sid].text = "DISCONNECTED"
                 global_labels[sid].classes(replace='text-3xl text-red-600 animate-pulse')
-                continue
-
-            txt, cls = state["global"]
-
+                continue 
+ 
+            txt, cls = state["global"] 
+ 
             global_labels[sid].text = txt
             global_labels[sid].classes(replace=cls)
 
@@ -827,7 +943,8 @@ async def main_page():
             #     continue
             # else:
             #     memo_state[sid] = False
-
+            now = time.strftime('%H:%M:%S')
+            
             state = battery_states[sid]
 
             txt, cls = state["last_request"]
@@ -856,9 +973,66 @@ async def main_page():
             for i, txt in enumerate(state["cell"]):
                 battery_cell_labels[sid][i].text = f'{txt} mV'
 
-            
+                if txt != '—':
+                    if int(txt) < 2500:
+                        color = 'text-red-600 font-bold'
+                    elif int(txt) < 3000:
+                        color = 'text-orange-500 font-bold'
+                    elif int(txt) < 3300:
+                        color = 'text-yellow-400'
+                    else:
+                        color = ''
+                    cell_history[sid][i].append((now, int(txt)))
+                else:
+                    color = ''
+                battery_cell_labels[sid][i].classes(replace=f'text-2xl font-mono {color}')
 
     ui.timer(0.5, refresh_ui)
+    
+    def update_chart():
+        sid = selected_battery.value
+        cell_idx = selected_cell.value
+
+        if sid is None or cell_idx is None:
+            print("error1")
+            return
+        if sid not in cell_history:
+            print("error2")
+            return
+    
+        history = list(cell_history[sid][cell_idx])
+
+        chart.options['xAxis']['data'] = [
+            t for t, _ in history
+        ]
+
+        chart.options['series'][0]['data'] = [
+            {
+                'value': v,
+                'itemStyle': {
+                    'color': (
+                        '#dc2626' if v < 2500 else   # rouge
+                        '#f97316' if v < 3000 else   # orange
+                        '#22c55e' if v >= 3300 else  # vert
+                        '#eab308'                    # jaune 3000-3299
+                    )
+                }
+            }
+            for _, v in history
+        ]
+
+        chart.options['title']['text'] = (
+            # f'Pile {sid} - {selected_cell.value}'
+            f'Pile {sid} - {LIST_BAT_CELLS[cell_idx]}'
+        )
+       
+
+        chart.update()
+
+    selected_battery.on_value_change(update_chart)
+    selected_cell.on_value_change(update_chart)
+
+    ui.timer(1.0, update_chart)
 
     async def close_app():
         global modbus_running
