@@ -6,11 +6,22 @@ datas = [('asset', 'asset')]
 binaries = []
 hiddenimports = ['serial']
 datas += collect_data_files('nicegui')
-tmp_ret = collect_all('nicegui')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('pymodbus')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-
+#tmp_ret = collect_all('nicegui')
+#datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+datas += collect_data_files('nicegui')
+hiddenimports += [
+    'nicegui',
+    'fastapi',
+    'uvicorn',
+    'socketio',
+    'engineio',
+]
+#tmp_ret = collect_all('pymodbus')
+#datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+hiddenimports += [
+    'pymodbus.client',
+    'pymodbus.framer.rtu',
+]
 
 a = Analysis(
     ['supervisor.py'],
@@ -21,9 +32,18 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['notebook', 'pandas', 'scipy', 'matplotlib'],
+    excludes=['notebook', 'pandas', 'scipy', 'matplotlib',
+    'jupyter',
+    'IPython',
+    'numpy',
+    'pytest',
+    'tkinter',
+    'PyQt5',
+    'PyQt6',
+    'PySide2',
+    'PySide6'],
     noarchive=False,
-    optimize=0,
+    optimize=2,
 )
 pyz = PYZ(a.pure)
 
@@ -36,7 +56,7 @@ exe = EXE(
     name='supervisor',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,
+    strip=True,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,

@@ -33,6 +33,9 @@ if sys.stderr is None:
     sys.stderr = open("nul", "w")
 
 logging.getLogger("pymodbus").setLevel(logging.CRITICAL)
+logging.getLogger('watchfiles').setLevel(logging.CRITICAL)
+logging.getLogger('asyncio').setLevel(logging.CRITICAL)
+logging.getLogger('nicegui').setLevel(logging.CRITICAL)
 
 # ────────────────────────────────────────────────
 # CONFIGURATION (à personnaliser !)
@@ -99,6 +102,7 @@ device_states = {
         "disconnected": False,
         "last_request": DEFAULT_TIME,
         "last_response": DEFAULT_TIME,
+        "dirty": True,
     }
     for i in SLAVE_IDS
 }
@@ -106,10 +110,10 @@ device_states = {
 # BATTERY MODBUS REGISTER
 BATTERY_START_REG = 0
 LIST_BAT_CELLS = {
-    0: "CELL 1 & 2",
+    0: "CELL 1 & 2 (x2)",
     1: "CELL 3",
     2: "CELL 4",
-    3: "CELL 5 & 6",
+    3: "CELL 5 & 6 (x2)",
     4: "CELL 7",
     5: "CELL 8",
     6: "CELL 9",
@@ -143,6 +147,7 @@ battery_states = {
         "disconnected": False,
         "last_request": DEFAULT_TIME,
         "last_response": DEFAULT_TIME,
+        "dirty": True,
     }
     for i in BATTERY_IDS
 }
@@ -247,6 +252,7 @@ def modbus_read_pyro(client, sid):
         device_states[sid]["no_refresh"] = False
         device_states[sid]["disconnected"] = False
         device_states[sid]["last_response"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
+        device_states[sid]["dirty"] = True
 
     except Exception:
         device_states[sid]["no_refresh"] = False
@@ -282,14 +288,12 @@ def modbus_read_battery(client, sid):
         battery_states[sid]["no_refresh"] = False
         battery_states[sid]["disconnected"] = False
         battery_states[sid]["last_response"] = (time.strftime('%H:%M:%S'), "text-base text-gray-500 mt-0 italic text-center")
+        battery_states[sid]["dirty"] = True
 
     except Exception:
         battery_states[sid]["no_refresh"] = False
         battery_states[sid]["disconnected"] = True
 
-    # except Exception as e:
-        # print(f'[BAT {sid}] {e}')
-        # return None
     
 def modbus_worker():
 
@@ -301,7 +305,7 @@ def modbus_worker():
             continue
 
         try:
-            if modbus_client is None:
+            if modbus_client is None or not modbus_client.connected:
                 modbus_client = ModbusClient(
                     port=selected_port,
                     baudrate=BAUDRATE,
@@ -317,10 +321,14 @@ def modbus_worker():
                 for sid in list(active_slaves):
                     with modbus_lock:
                         modbus_read_pyro(modbus_client, sid)
+
+                    time.sleep(0.002)
                 
                 for sid in BATTERY_IDS:
                     with modbus_lock:
                         modbus_read_battery(modbus_client, sid)
+                    
+                    time.sleep(0.002)
 
         except Exception as e:
             print(f"[WORKER] {e}")
@@ -882,7 +890,7 @@ async def main_page():
                     ]
                 }
             }],
-        }).classes('w-full h-96')
+        }).classes('w-full h-128')
 
     ui.separator()
     ui.label("Accès smartphone :")
@@ -902,7 +910,10 @@ async def main_page():
                 memo_state[sid] = False
 
             state = device_states[sid]
+            if not state["dirty"]:
+                continue
 
+            state["dirty"] = False
             txt, cls = state["last_request"]
             last_request[sid].text = txt
             last_request[sid].classes(replace=cls)
@@ -946,7 +957,11 @@ async def main_page():
             now = time.strftime('%H:%M:%S')
             
             state = battery_states[sid]
+            if not state["dirty"]:
+                    continue
 
+            state["dirty"] = False
+            
             txt, cls = state["last_request"]
             last_request_batt[sid].text = txt
             last_request_batt[sid].classes(replace=cls)
@@ -971,9 +986,11 @@ async def main_page():
             battery_pack_labels[sid].text = f'{state["pack"]} mV'
 
             for i, txt in enumerate(state["cell"]):
-                battery_cell_labels[sid][i].text = f'{txt} mV'
-
                 if txt != '—':
+                    if i == 0 or i == 3:
+                        val = int(txt) / 2
+                        txt = str(int(val))
+                        
                     if int(txt) < 2500:
                         color = 'text-red-600 font-bold'
                     elif int(txt) < 3000:
@@ -981,9 +998,12 @@ async def main_page():
                     elif int(txt) < 3300:
                         color = 'text-yellow-400'
                     else:
-                        color = ''
+                        color = 'text-green-600'
+
+                    battery_cell_labels[sid][i].text = f'{txt} mV'
                     cell_history[sid][i].append((now, int(txt)))
                 else:
+                    battery_cell_labels[sid][i].text = f'{txt} mV'
                     color = ''
                 battery_cell_labels[sid][i].classes(replace=f'text-2xl font-mono {color}')
 
