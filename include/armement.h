@@ -13,7 +13,9 @@ typedef struct	StructArm{
 	uint8_t			Step;
 	uint8_t			Cpt;
 	unsigned long	Time;
+	unsigned long	TimeLed;
 	float			U_Alim_1A;
+	bool			etat_led_bouton;
 }struArm;
 
 extern struArm Arm;

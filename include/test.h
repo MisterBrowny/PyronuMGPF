@@ -54,6 +54,7 @@ typedef struct	StructTest{
 
 extern struTest Test;
 
+void check_comutest_disconnect(void);
 void check_comutest(uint8_t State);
 uint8_t check_program_0 (void);
 void check_idtest (void);

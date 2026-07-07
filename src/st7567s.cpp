@@ -113,6 +113,8 @@ void st7567s_init (void)
   SERIAL_DEBUG("ST7567s init ends");
 }
 
+const uint8_t num_tir[NB_TIR] = 
+{1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 8, 16};
 
 void st7567s_refresh (void)
 {
@@ -133,24 +135,25 @@ void st7567s_refresh (void)
     display.println(string_test);
     for (i = 0; i < NB_TIR; i ++)
     {
-      if ((i + 1) < 10)
+      uint8_t j = num_tir[i];
+      if (j < 10)
       {
-        sprintf(string_test, "  Tir     %2 d:   ", i + 1);
+        sprintf(string_test, "  Tir     %2 d:   ", j);
       }
       else
       {
-        sprintf(string_test, "  Tir %2 d:   ", i + 1);
+        sprintf(string_test, "  Tir %2 d:   ", j);
       }
       display.print(string_test);
-      if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
+      if (((Modbus.state.analog[(((j-1) < 8) ? 0 : 1)] >> (((j-1) < 8) ? (j-1) : (j-1) - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
       {        
         sprintf(string_test, "OK                        ");
       }
-      else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
+      else if (((Modbus.state.analog[(((j-1)< 8) ? 0 : 1)] >> (((j-1) < 8) ? (j-1) : (j-1) - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
       {
         sprintf(string_test, "MOYEN         ");
       }
-      else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
+      else if (((Modbus.state.analog[(((j-1) < 8) ? 0 : 1)] >> (((j-1) < 8) ? (j-1) : (j-1) - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
       {
         sprintf(string_test, "->  !  KO  !       ");
       }
@@ -159,7 +162,7 @@ void st7567s_refresh (void)
         sprintf(string_test, "  -                          ");
       }
       #if DEBUG_PRINT
-        sprintf(string, "index = %d, shift = %d, result = 0x%04X", ((i < 8) ? 0 : 1), ((i < 8) ? i : i - 8)*2, (Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2));
+        sprintf(string, "tir = %d, index = %d, shift = %d, result = 0x%04X", j, (((j-1) < 8) ? 0 : 1), (((j-1) < 8) ? (j-1) : (j-1) - 8)*2, (Modbus.state.analog[(((j-1) < 8) ? 0 : 1)] >> (((j-1) < 8) ? (j-1) : (j-1) - 8)*2));
         SERIAL_DEBUG(string);
         SERIAL_DEBUG(string_test);
       #endif
@@ -177,6 +180,67 @@ void st7567s_refresh (void)
     
     Test.print_result = false;
   }
+  // if (Test.print_result == true)
+  // {
+  //   char string_test[100];
+  //   #if DEBUG_PRINT
+  //     char string[100];
+  //   #endif
+  //   uint8_t i;
+
+  //   display.textflow(st7567sfGK::toptobottom);
+  //   display.clear(st7567sfGK::colorblack);
+  //   display.setFont(&Picopixel);
+
+  //   sprintf(string_test, "UAlim=%dmV | UAlim(1A)=%dmV", (int) Test.U_Alim, (int) Arm.U_Alim_1A);
+    
+  //   display.println(string_test);
+  //   for (i = 0; i < NB_TIR; i ++)
+  //   {
+  //     if ((i + 1) < 10)
+  //     {
+  //       sprintf(string_test, "  Tir     %2 d:   ", i + 1);
+  //     }
+  //     else
+  //     {
+  //       sprintf(string_test, "  Tir %2 d:   ", i + 1);
+  //     }
+  //     display.print(string_test);
+  //     if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_OK)
+  //     {        
+  //       sprintf(string_test, "OK                        ");
+  //     }
+  //     else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_MOYEN)
+  //     {
+  //       sprintf(string_test, "MOYEN         ");
+  //     }
+  //     else if (((Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2) & MASK_ANALOG_STATE) == ANALOG_KO)
+  //     {
+  //       sprintf(string_test, "->  !  KO  !       ");
+  //     }
+  //     else
+  //     {
+  //       sprintf(string_test, "  -                          ");
+  //     }
+  //     #if DEBUG_PRINT
+  //       sprintf(string, "index = %d, shift = %d, result = 0x%04X", ((i < 8) ? 0 : 1), ((i < 8) ? i : i - 8)*2, (Modbus.state.analog[((i < 8) ? 0 : 1)] >> ((i < 8) ? i : i - 8)*2));
+  //       SERIAL_DEBUG(string);
+  //       SERIAL_DEBUG(string_test);
+  //     #endif
+
+  //     display.print(string_test);
+  //     if (i % 2)
+  //     {
+  //       display.print("\r\n");
+  //     }
+  //     else
+  //     {
+  //       display.print("|    ");
+  //     }
+  //   }    
+    
+  //   Test.print_result = false;
+  // }
   else if (memcmp((const void*) Ecran.Digit, (const void*) Ecran.MemoDigit, NUM_CHAR) != 0)
   {
     display.textflow(st7567sfGK::toptobottom);

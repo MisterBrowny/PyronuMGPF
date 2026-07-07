@@ -6,8 +6,8 @@ void ecran_init (void)
 {
 	byte i = 0;
 
-	memset((void*) Ecran.Digit, 0, 7);
-	memset((void*) Ecran.MemoDigit, 0, 7);
+	memset((void*) Ecran.Digit, 0, 8);
+	memset((void*) Ecran.MemoDigit, 0, 8);
 
 	Ecran.Digits = Ecran.Digit;
 }
@@ -55,9 +55,9 @@ void ecran_wait (void)
 	display.textflow(st7567sfGK::toptobottom);
     display.clear(st7567sfGK::colorblack);
     display.setFont(&FreeSans9pt7b);
-	display.println("Test (Bp Test)");
-	display.println("   ou");
-	display.println("Tir (Bp On) ?");
+	display.println("Choix du mode");
+	display.println("avec boutons");
+	display.println(" TEST | ON TIR ");
 }
 
 void ecran_blank (void)

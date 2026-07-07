@@ -24,35 +24,42 @@ void arm_UAlim_1A (bool print)
 	
 	Arm.U_Alim_1A = temp * PONT_DIVISEUR;
 	
-	sprintf(string_test, "U ALIM 1A=%d", Arm.U_Alim_1A);
-	SERIAL_DEBUG(string_test);
-	
 	Modbus.state.alim_1A = (uint16_t) Arm.U_Alim_1A;
+
+	sprintf(string_test, "U1A=%dmV", Modbus.state.alim_1A);
+	SERIAL_DEBUG(string_test);
 
 	if (print == true)
 	{
-		itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);
+		display.textflow(st7567sfGK::toptobottom);
+		display.clear(st7567sfGK::colorblack);
+		display.setFont(&FreeSans9pt7b);
+		display.println(string_test);
+		display.println("Push ON 3sec");
+		display.println("pour armer");
 
-		if (Arm.U_Alim_1A < 10000.0f)
-		{
-			Ecran.Digit[0] = ' ';
-			Ecran.Digit[1] = temp_tab[0];
-			Ecran.Digit[2] = '.';
-			Ecran.Digit[3] = temp_tab[1];
-			Ecran.Digit[4] = temp_tab[2];
-			Ecran.Digit[5] = temp_tab[3];
-			Ecran.Digit[6] = 0;
-		}
-		else
-		{
-			Ecran.Digit[0] = temp_tab[0];
-			Ecran.Digit[1] = temp_tab[1];
-			Ecran.Digit[2] = '.';
-			Ecran.Digit[3] = temp_tab[2];
-			Ecran.Digit[4] = temp_tab[3];
-			Ecran.Digit[5] = 0;
-			Ecran.Digit[6] = 0;
-		}
+		// itoa((int) Arm.U_Alim_1A, &temp_tab[0], 10);
+
+		// if (Arm.U_Alim_1A < 10000.0f)
+		// {
+		// 	Ecran.Digit[0] = ' ';
+		// 	Ecran.Digit[1] = temp_tab[0];
+		// 	Ecran.Digit[2] = '.';
+		// 	Ecran.Digit[3] = temp_tab[1];
+		// 	Ecran.Digit[4] = temp_tab[2];
+		// 	Ecran.Digit[5] = temp_tab[3];
+		// 	Ecran.Digit[6] = 0;
+		// }
+		// else
+		// {
+		// 	Ecran.Digit[0] = temp_tab[0];
+		// 	Ecran.Digit[1] = temp_tab[1];
+		// 	Ecran.Digit[2] = '.';
+		// 	Ecran.Digit[3] = temp_tab[2];
+		// 	Ecran.Digit[4] = temp_tab[3];
+		// 	Ecran.Digit[5] = 0;
+		// 	Ecran.Digit[6] = 0;
+		// }
 	}
 }
 
@@ -74,6 +81,10 @@ void armement_process (void)
 			arm_UAlim_1A(true);
 
 			Arm.Step = ARM_WAIT_1;
+			
+			Arm.TimeLed = millis();
+			Arm.etat_led_bouton = false;
+			
 			break;
 		case ARM_WAIT_1:
 			if (Bouton[Bp_On].State == 0)
@@ -83,11 +94,25 @@ void armement_process (void)
 
 				ecran_blank();
 			}
+
+			if (TempsSup(Arm.TimeLed, TDef200ms))
+			{
+				Arm.TimeLed = millis();
+				Arm.etat_led_bouton ^= true;
+					
+				digitalWrite(LED_BPTEST, LOW);
+				digitalWrite(LED_BPON, (Arm.etat_led_bouton ? LOW : HIGH));
+			}
 			break;
 		case ARM_WAIT_2:
+			digitalWrite(LED_BPTEST, LOW);
+			digitalWrite(LED_BPON, HIGH);
+
 			if (Bouton[Bp_On].State == 1)
 			{
 				Micro.Phase = MICRO_WAIT;
+				digitalWrite(LED_BPTEST, LOW);
+				digitalWrite(LED_BPON, LOW);
 
 				ecran_wait();
 			}
@@ -106,6 +131,7 @@ void armement_process (void)
 				Micro.Phase = MICRO_FEU;
 				Micro.State = ARMED;
 			}
+			
 			break;
 	}
 }

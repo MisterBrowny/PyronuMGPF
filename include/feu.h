@@ -39,6 +39,7 @@ typedef struct	StructFeu{
 	uint8_t			NextOutput;	// prochaine sortie à tirer
 	unsigned		CanStopStart	:1;
 	unsigned		SaveTime		:1;
+	unsigned		Error_TIR		:1;
 }struFeu;
 
 extern struFeu Feu;

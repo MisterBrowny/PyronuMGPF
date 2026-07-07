@@ -39,6 +39,8 @@ static void feu_tir (byte Output)
 
 void feu_check_bp (void)
 {
+	Feu.Error_TIR = false;
+
 	if (	(Micro.Stat.End == true)
 		&&	(Bouton[Bp_On].State == 0))
 	{
@@ -87,12 +89,14 @@ void feu_check_bp (void)
 	else if (COMU_PUISS_NON == LOW)
 	{
 		Ecran.Digit[0] = 'E';
-		Ecran.Digit[1] = '_';
-		Ecran.Digit[2] = 't';
-		Ecran.Digit[3] = ' ';
-		Ecran.Digit[4] = ' ';
-		Ecran.Digit[5] = 0;
-		Ecran.Digit[6] = 0;
+		Ecran.Digit[1] = 'r';
+		Ecran.Digit[2] = 'r';
+		Ecran.Digit[3] = '_';
+		Ecran.Digit[4] = 'T';
+		Ecran.Digit[5] = 'I';
+		Ecran.Digit[6] = 'R';
+
+		Feu.Error_TIR = true;
 	}
 	else if (Bouton[Bp_IdTest].State == 0)
 	{

@@ -5,6 +5,21 @@
 
 struTest Test;
 
+void check_comutest_disconnect (void)
+{
+	if ((COMU_PUISS_NON == HIGH) && (COMU_PUISS_OUI == HIGH))
+	{
+		while(1)
+		{
+			ecran_blank();
+			ecran_erreur_comu();
+			st7567s_refresh();
+
+			SERIAL_DEBUG("Erreur - comu puissance oui et non vus HIGH");
+		}
+	}
+}
+
 void check_comutest (byte State)
 {
 	if (State == LOW)
@@ -50,17 +65,7 @@ void check_comutest (byte State)
 			SERIAL_DEBUG("Erreur - comu puissance oui et non vus LOW");
 		}
 	}
-	// else if ((COMU_PUISS_NON == HIGH) && (COMU_PUISS_OUI == HIGH))
-	// {
-	// 	while(1)
-	// 	{
-	// 		ecran_blank();
-	// 		ecran_erreur_comu();
-	// 		st7567s_refresh();
-
-	// 		SERIAL_DEBUG("Erreur - comu puissance oui et non vus HIGH");
-	// 	}
-	// }
+	// else 
 }
 
 byte check_program_0 (void)
@@ -134,10 +139,10 @@ void check_UAlim (void)
 	temp = analogReadMilliVolts(U_TEST_1A_ADC);
 	Test.U_Alim = temp * PONT_DIVISEUR;
 
-	sprintf(string_test, "U ALIM =%d", Test.U_Alim);
-	SERIAL_DEBUG(string_test);
-
 	Modbus.state.alim = (uint16_t) Test.U_Alim;
+	
+	sprintf(string_test, "U ALIM = %d mV", Modbus.state.alim);
+	SERIAL_DEBUG(string_test);
 }
 
 uint32_t moy_analog (uint8_t pin, uint32_t nb_mesure)

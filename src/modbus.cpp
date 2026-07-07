@@ -31,6 +31,7 @@
 #define MODBUS_STATE_PROG   5
 #define MODBUS_STATE_STOP   6
 #define MODBUS_STATE_PAUSE  7
+#define MODBUS_STATE_ERROR  8
 
 #define MODBUS_ANALOG_NB_VALUE    4
 #define MODBUS_ANALOG_ALL_OK      0xFFFF
@@ -119,28 +120,35 @@ void modbus_refresh (void)
     }    
     else if (Micro.Phase == MICRO_FEU)
     {
-        if (Micro.State == ARMED)
+        if (Feu.Error_TIR == true)
         {
-            Modbus.state.global_state = MODBUS_STATE_ARMED;
+            Modbus.state.global_state = MODBUS_STATE_ERROR;
         }
-        else if (Micro.State == GO)
+        else
         {
-            Modbus.state.global_state = MODBUS_STATE_GO;
-        }
-        else if (Micro.State == STOP)
-        {
-            if (Feu.Step == FEU_PAUSE)
+            if (Micro.State == ARMED)
             {
-                Modbus.state.global_state = MODBUS_STATE_PAUSE;
+                Modbus.state.global_state = MODBUS_STATE_ARMED;
             }
-            else if (Feu.Step == FEU_STOP)
+            else if (Micro.State == GO)
             {
-                Modbus.state.global_state = MODBUS_STATE_STOP;
+                Modbus.state.global_state = MODBUS_STATE_GO;
             }
-        }
-        else if (Micro.State == END)
-        {
-            Modbus.state.global_state = MODBUS_STATE_END;
+            else if (Micro.State == STOP)
+            {
+                if (Feu.Step == FEU_PAUSE)
+                {
+                    Modbus.state.global_state = MODBUS_STATE_PAUSE;
+                }
+                else if (Feu.Step == FEU_STOP)
+                {
+                    Modbus.state.global_state = MODBUS_STATE_STOP;
+                }
+            }
+            else if (Micro.State == END)
+            {
+                Modbus.state.global_state = MODBUS_STATE_END;
+            }
         }
     }
     else if (Micro.Phase == MICRO_PROG)

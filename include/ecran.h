@@ -1,7 +1,7 @@
 #ifndef ECRAN_H
 #define	ECRAN_H
 
-#define NUM_CHAR	7
+#define NUM_CHAR	8
 
 typedef struct	StructEcran{
 	volatile char Digit[NUM_CHAR];

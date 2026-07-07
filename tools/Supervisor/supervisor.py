@@ -72,6 +72,7 @@ GLOBAL_MAP = {
     5: ("PROG",  "text-3xl text-sky-800 font-bold animate-pulse"),
     6: ("STOP",  "text-3xl text-orange-400 font-bold animate-pulse"),
     7: ("PAUSE",  "text-3xl text-orange-300 font-bold animate-pulse"),
+    8: ("ERROR_TIR",  "text-3xl text-purple-800 font-bold animate-pulse"),
 }
 
 ANALOG_MAP = {
@@ -184,7 +185,9 @@ PYRO_TAB_COLORS = {
     'TEST': 'bg-green-600 text-white',
     'PROG': 'bg-sky-800 text-white',
     'STOP': 'bg-orange-400 text-white',
-    'PAUSE': 'bg-orange-300 text-white'
+    'PAUSE': 'bg-orange-300 text-white',
+    'ERROR_TIR': 'bg-purple-400 text-white',
+    'DISCONNECTED': 'bg-gray-700 text-white',
 }
 
 BATTERY_TAB_COLORS = {
@@ -466,22 +469,21 @@ def toggle_all_slave(e):
 # =========================================================
 
 def update_pyro_tab_color(sid, state):
-    if pyro_tab_states[sid] == state:
-        return
+    # if pyro_tab_states[sid] == state:
+    #     return
 
-    pyro_tab_states[sid] = state
+    # pyro_tab_states[sid] = state
     color = PYRO_TAB_COLORS.get(state, 'bg-gray-700 text-white')
-    pyro_tabs[sid].classes(remove=ALL_TAB_CLASSES)
-    pyro_tabs[sid].classes(add=f'{color} rounded-xl shadow font-bold')
+    pyro_tabs[sid].classes(replace=f'{color} rounded-xl shadow font-bold transition-all duration-300')
+    # pyro_tabs[sid].classes(remove=ALL_TAB_CLASSES)
+    # pyro_tabs[sid].classes(add=f'{color} rounded-xl shadow font-bold')
 
 def update_battery_tab_color(sid, state):
-    if battery_tab_states[sid] == state:
-        return
 
-    battery_tab_states[sid] = state
     color = BATTERY_TAB_COLORS.get(state, 'bg-gray-700 text-white')
-    battery_tabs_dict[sid].classes(remove=ALL_TAB_CLASSES)
-    battery_tabs_dict[sid].classes(add=f'{color} rounded-xl shadow font-bold')
+    battery_tabs_dict[sid].classes(replace=f'{color} rounded-xl shadow font-bold transition-all duration-300')
+    # battery_tabs_dict[sid].classes(remove=ALL_TAB_CLASSES)
+    # battery_tabs_dict[sid].classes(add=f'{color} rounded-xl shadow font-bold')
 
 @ui.page('/')
 
@@ -591,18 +593,21 @@ async def main_page():
 
                     # Test Infla
                     ui.label('Test Infla').classes('text-2xl mt-0 mb-2')
- 
+
                     with ui.grid(columns=2).classes('w-full gap-6'):
 
                         analogs = [None] * NUM_ANALOG_INPUTS
 
-                        for i in range(1, NUM_ANALOG_INPUTS + 1):
+                        display_order = [1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 8, 16]
+
+                        for tir in display_order:
                             with ui.column().classes('items-center bg-zinc-700 p-1 rounded-3xl w-auto'):
-                                ui.label(f'TIR {i:02d}').classes('text-1xl text-white-500')
+                                ui.label(f'TIR {tir:02d}').classes('text-1xl text-white-500')
                                 lbl = ui.label('—').classes('text-2xl font-bold')
-                                analogs[i-1] = lbl
+                                analogs[tir - 1] = lbl
 
                         analog_labels[dev_idx] = analogs
+
 
                     with ui.row().classes('items-center w-full'):
                         ui.label('Last request time: ').classes('text-base text-gray-500 mt-0 italic text-center')
@@ -926,6 +931,8 @@ async def main_page():
  
                 global_labels[sid].text = "DISCONNECTED"
                 global_labels[sid].classes(replace='text-3xl text-red-600 animate-pulse')
+
+                update_pyro_tab_color(sid, global_labels[sid].text)
                 continue 
  
             txt, cls = state["global"] 

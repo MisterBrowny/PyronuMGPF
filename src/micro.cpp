@@ -90,7 +90,7 @@ void micro_wait (void)
 					if (COMU_PUISS_OUI == LOW)
 					{// Si PUISSANCE ON => c'est le bouton BP_ON qui clignote
 						if (Micro.memo_comu != COMU_PUISSANCE_ON)
-						{// Allume direct la led si changment d'état
+						{// Allume direct la led si changement d'état
 							Micro.etat_led_bouton = true;
 						}
 
@@ -101,7 +101,7 @@ void micro_wait (void)
 					else if (COMU_PUISS_NON == LOW)
 					{// Si PUISSANCE OFF => c'est le bouton BP_TEST qui clignote
 						if (Micro.memo_comu != COMU_PUISSANCE_OFF)
-						{// Allume direct la led si changment d'état
+						{// Allume direct la led si changement d'état
 							Micro.etat_led_bouton = true;
 						}
 						

@@ -2,14 +2,6 @@ TODO
 
 
 
-46/ mettre la couleur des  onglets en fonction de l'état du boitier
-
-42/ sur l'écran BP_ON | BP_TEST dans le choix 
-
-45/ changer les lignes 1-8 CL1 en bas 9-16 CL2 en haut
-  - dans le supervisor
-  - sur l'écran
-  - dans les pilotages TIR et TEST
 
 33/ LED RGB
 Quelles sont les idées pour piloter les led ?
@@ -22,8 +14,7 @@ pause rouge END
 End bleu fixe
 Armed chenillard rouge
 
-42/ revoir les messages affichés sur écran
-  => afficher appuyer pendant 3 seconde sur BP_ON
+
 
 20/  Dans l'état TEST et ARMED affiché le test INFLA
   Dans l'état GO et END affiché les lignes tirées 
@@ -44,7 +35,7 @@ void check_NB_AT (byte State)
 	}
 }
 
-
+49/ afficher l'info START sur le supervisor (une boolean ON/OFF)
 
 
 

@@ -193,3 +193,29 @@ et au lieu de faire le test 1A on affiche le message "Appuyer 3 secondes sur le 
 41/ Supervisor recompilé en /onedir au lieu de /onefile => on compile les deux pour l'instant
 
 44/ Affiché ARMED sur Supervisor que si le boitier est armée => FAIT
+
+46/ mettre la couleur des  onglets en fonction de l'état du boitier => FAIT 
+Robustification de la fonction => FAIT
+
+47/ Ajout test fait une seule fois au démarrage si le commutateur COMU TEST n'est pas connecté
+((COMU_PUISS_NON == HIGH) && (COMU_PUISS_OUI == HIGH))
+/!\ Ce test est bloquant le pyronum reste en boucle infinie. Il faut redémarrer le boitier si le cas se présente.
+  
+Finalement c'est comme le cas où ((COMU_PUISS_NON == LOW) && (COMU_PUISS_OUI == LOW))
+	si le comutest est vu en erreur on part en boucle infinie en mode test et armement.
+  Ce test est fait à de multiples endroits en mode test et armement.
+  Par contre en mode tir, si (COMU_PUISS_NON == LOW)  on affiche l'erreur sur l'écran et sur le supervisor ERROR_TIR
+  mais ça reste de l'affichage et la séquence de tir continuera son cours normal. Bien qu'à priori le tir ne sera pas effectif.
+
+
+42/ sur l'écran BP_ON | BP_TEST dans le choix => FAIT
+
+45/ changer les lignes 1-8 CL1 en bas 9-16 CL2 en haut
+  - dans le supervisor => FAIT 
+  - sur l'écran => FAIT st7567s_refresh
+  - dans les pilotages TIR et TEST => FAIT dans les tables const uint8_t Led / uint8_t Tir
+
+42/ revoir les messages affichés sur écran
+  => afficher appuyer pendant 3 seconde sur BP_ON => FAIT
+
+48/ Ajout d'un nouveau mode d'affichage ERROR_TIR dans le supervisor pour afficher le cas d'erreur armer ou en tir et le comutest n'est pas dans la position pour activer la puissance.

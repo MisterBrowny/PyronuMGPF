@@ -31,6 +31,9 @@ void setup() {
   // Init chaine de caractéres à afficher
   ecran_init();
   
+  // Check si le bouton comutest est connecté
+  check_comutest_disconnect();
+
   Micro.Time = millis();
 
   // Init modbus
