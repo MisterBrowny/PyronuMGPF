@@ -37,6 +37,8 @@ static void feu_tir (byte Output)
 	Feu.Cpt ++;
 }
 
+#define TEST_NO_SIGNAL_START_WAIT 0
+
 void feu_check_bp (void)
 {
 	Feu.Error_TIR = false;
@@ -118,13 +120,16 @@ void feu_check_bp (void)
 	}
 }
 
+
 void feu_process (void)
 {
 	switch (Feu.Step)
 	{
 		case FEU_ARMED:
 			// Attend le top départ
-			if (Bouton[Bp_Start].State == 0)
+			#if (TEST_NO_SIGNAL_START_WAIT == 0)
+				if (Bouton[Bp_Start].State == 0)
+			#endif
 			{
 				if (Micro.Mods == false)	{Feu.Step = FEU_SELECT;}
 				else						{Feu.Step = FEU_SELECT_P0;}
@@ -157,12 +162,9 @@ void feu_process (void)
 		case FEU_GO:
 			// if (Cpt1Sur20s == Feu.TimeToFire)
 			// if (CPT_1_20_S == Feu.TimeToFire)
-			if (CPT_1_100_S == Feu.TimeToFire)
+			if (CPT_1_100_S >= Feu.TimeToFire)
 			{
-				if (AT_SIGNAL == HIGH)
-				{
-					feu_tir(Feu.NextOutput);
-				}
+				feu_tir(Feu.NextOutput);
 				Feu.Step = FEU_SELECT;
 			}
 			break;
@@ -189,10 +191,7 @@ void feu_process (void)
 			{
 				delay(15);
 
-				if (AT_SIGNAL == HIGH)
-				{
-					feu_tir(Feu.NextOutput);
-				}
+				feu_tir(Feu.NextOutput);
 				Feu.Step = FEU_WAIT_P0;
 				Feu.Time = millis();
 			}

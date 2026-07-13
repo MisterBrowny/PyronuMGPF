@@ -1,8 +1,5 @@
 TODO
 
-
-
-
 33/ LED RGB
 Quelles sont les idées pour piloter les led ?
 Pilotage en fonction des Etat Pyronum ?
@@ -14,6 +11,14 @@ pause rouge END
 End bleu fixe
 Armed chenillard rouge
 
+3 led dédiées au chenillard du mode
+1 LED pour le START BLEU
+1 LED pour le AT ORANGE FONCE  
+
+50/ NB_AT et START 
+
+49/ Allumer les led qui doivent tirer une fois le module armé
+On eteint la sortie des que la ligne est tirée
 
 
 20/  Dans l'état TEST et ARMED affiché le test INFLA

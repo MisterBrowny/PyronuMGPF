@@ -64,9 +64,9 @@ extern const uint8_t SLAVE_ID;
 // #define DefValInflaOK	    94			    // 3.3 x (48 / (48 + 120))
 //                                             // Correspond d'après mesure à 48ohms
 
-#define DefValInflaMOYEN	1906			 // en mV => Correspond d'après mesure à 33ohms
+#define DefValInflaMOYEN	2000			 // en mV => Correspond d'après mesure à 33ohms
 
-#define DefValInflaNOK	    1945			 // en mV => Correspond d'après mesure à 47ohms // TODO mettre la valeur ohmique
+#define DefValInflaNOK	    2080			 // en mV => Correspond d'après mesure à 47ohms // TODO mettre la valeur ohmique
 
 #define DefNbMesureINFLA    30
 
